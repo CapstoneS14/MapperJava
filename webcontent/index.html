@@ -1,0 +1,2439 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        
+        <title>Department of Commerce - Mapping Software</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE10">
+        <style>
+            label { float: left; width: 600px; }
+            display:block
+            input[type=text] { float: left; width: 400px; }
+                .clear { clear: both; height: 0; line-height: 0; }
+                .floatright { float: right; }
+            
+        </style>
+        
+        <script type="text/javascript" src="scripts/HashMap.js"></script>
+        <script type="text/javascript" src="scripts/CountryAbb.js"></script>
+        <script type="text/javascript" src="scripts/InitiateWorldMap.js"></script>
+        <script type="text/javascript" src="scripts/InitiateUSAMap.js"></script>
+        <script type="text/javascript" src="scripts/json_eval.js"></script>
+        <script type="text/javascript" src="scripts/deployJava.js"></script>
+ 
+        
+	<link rel="stylesheet" href="stylesheets/jquery.ui.all.css">
+	<script src="scripts/jquery-1.10.2.js"></script>
+	<script src="ui/jquery.ui.core.js"></script>
+	<!-- <script src="ui/jquery.ui.widget.js"></script> -->
+	<script src="ui/jquery.ui.datepicker.js"></script>
+	<link rel="stylesheet" href="stylesheets/local.css">
+	<script>
+	$(function() {
+		$( "#fromtanc1" ).datepicker({
+			defaultDate: "+1w",
+			changeMonth: true,
+			numberOfMonths: 1,
+			onClose: function( selectedDate ) {
+				$( "#totanc1" ).datepicker( "option", "minDate", selectedDate );
+			}
+		});
+		$( "#totanc1" ).datepicker({
+			defaultDate: "+1w",
+			changeMonth: true,
+			numberOfMonths: 1,
+			onClose: function( selectedDate ) {
+				$( "#fromtanc1" ).datepicker( "option", "maxDate", selectedDate );
+			}
+		});
+                
+                $( "#fromtanc2" ).datepicker({
+			defaultDate: "+1w",
+			changeMonth: true,
+			numberOfMonths: 1,
+			onClose: function( selectedDate ) {
+				$( "#totanc2" ).datepicker( "option", "minDate", selectedDate );
+			}
+		});
+		$( "#totanc2" ).datepicker({
+			defaultDate: "+1w",
+			changeMonth: true,
+			numberOfMonths: 1,
+			onClose: function( selectedDate ) {
+				$( "#fromtanc2" ).datepicker( "option", "maxDate", selectedDate );
+			}
+		});
+                
+                $( "#fromtanc3" ).datepicker({
+			defaultDate: "+1w",
+			changeMonth: true,
+			numberOfMonths: 1,
+			onClose: function( selectedDate ) {
+				$( "#totanc3" ).datepicker( "option", "minDate", selectedDate );
+			}
+		});
+		$( "#totanc3" ).datepicker({
+			defaultDate: "+1w",
+			changeMonth: true,
+			numberOfMonths: 1,
+			onClose: function( selectedDate ) {
+				$( "#fromtanc3" ).datepicker( "option", "maxDate", selectedDate );
+			}
+		});
+	});
+	
+	var launcher_applet = null;
+	
+	function appletLoaded(applet){
+		launcher_applet = applet;
+	}
+	
+	function chooseFileJava(){
+		launcher_applet.chooseFile();
+	}
+	
+	
+    var attributes = {
+        code:'LauncherApplet.class',
+        archive:'../lib/slauncherApp.jar',
+        width:1100, height:500} ;
+	//var parameters = { ... your application parameters } ;
+	var version = '1.7' ;
+	alert("Hi");
+	deployJava.runApplet(attributes, parameters, version);
+	alert("Helo");
+	
+	</script>
+        
+        <!-- script to read data from excel file; requires Hashmap script file; can move this also to a different js file?? -->
+        <script type="text/javascript">
+            //to be updated to get the row and column numbers from user input 
+            function readData(file) {
+                //need to find a better way to get the below start and end values
+                //right now hard coded for the dummy excel file
+                var xStart = 2; //first row of data - headers assumed
+                var yStart = 1; //first column of data
+                var xEnd = 178; //last row of data
+                var yEnd = 18;  //last column of data
+                var xVal = xStart;
+                var yVal = yStart;
+
+                var excel;
+                var excel_file;
+                var excel_sheet;
+                var data;
+                var headers = new Array();
+                var jsonArray = " { \"records\" : [ ";
+                
+                try {
+                    excel = new ActiveXObject("Excel.Application");
+                    excel.Visible = false;
+                    excel_file = excel.Workbooks.Open(file); //alert(excel_file.worksheets.count);
+                    excel_sheet = excel_file.Worksheets("Sheet1");
+            
+                    //read headers
+                    while (yVal <= yEnd && xVal === xStart) {
+                        data = excel_sheet.Cells(xVal,yVal).Value;
+                        headers.push(data);
+                        yVal = yVal + 1;
+                    }
+                    
+                    /* Test headers array
+                    for(var i = 0; i<headers.length; i++) 
+                        document.writeln(headers[i] + "<br>");
+                    */
+                   
+                    //read each row into a hashmap and push each hashmap into an array
+                    xVal = xVal + 1;
+                    while (xVal <= xEnd) {
+                        var currentHash = new HashMap();
+                        yVal = yStart;
+                        var values = new Array();
+                        while (yVal <= yEnd) {
+                            data = excel_sheet.Cells(xVal,yVal).Value;
+                            values.push(data);
+                            yVal = yVal + 1;
+                        }
+                        
+                        for(var i=0; i<headers.length;i++) {
+                            currentHash.put(headers[i], values[i]);
+                        }
+                        var header = currentHash.keys();
+                        //document.writeln("{");
+                        jsonArray = jsonArray + "{";
+                        for(var i=0; i<currentHash.size()-1;i++) {
+                            //document.writeln(header[i] + ":" + currentHash.get(header[i]) + ",");
+                            jsonArray = jsonArray + "\"" + header[i] + "\":\"" + currentHash.get(header[i]) + "\",";
+                        }
+                        //document.writeln(header[i] + ":" + currentHash.get(header[i]) + "} <br>" );
+                        if (xVal < xEnd)
+                            jsonArray = jsonArray + "\"" + header[i] + "\":\"" + currentHash.get(header[i]) + "\"}, ";
+                        else 
+                            jsonArray = jsonArray + "\"" + header[i] + "\":\"" + currentHash.get(header[i]) + "\"} ";
+                        xVal = xVal + 1;
+                        
+                        
+                    }
+                    jsonArray = jsonArray + " ]}";
+                    //document.writeln(jsonArray + "<br><br>");                    
+                    
+                    //Parse and process json object string created above - retrieving record number of the first element in records array
+                    //var contents = jsonParse(jsonArray);
+                    //document.writeln("DUMMY RECORD NUMBER:" + data[0]["Record Number"]);
+                
+                } catch (ex) {
+                    alert(ex);
+                } finally {
+                    data = null;
+                    excel_sheet = null;
+                    excel_file.Close();    // important
+                    excel_file = null;
+                    excel.Application.Quit();
+                    excel = null;
+                }
+                return jsonArray;
+            }
+        </script>
+        
+    </head>
+
+    <body bgcolor="#E6E6FA">
+             
+        <form name="dataCategoryForm" method="get" action="" style="position: absolute; top:50px; left:100px; width:400px; height:25px">
+                                  
+            <h1>I want to display data for</h1>
+            <p><input type="radio" name="input" value="AdCvdActions" disabled /> AD/CVD Actions </p>
+            <p><input type="radio" name="input" value="TancCases" /> TANC Casework </p>
+            <p><input type="radio" name="input" value="TradeRemedyActions" disabled /> Trade Remedy Actions </p>
+            <p><input type="radio" name="input" value="ForeignTradeZone" disabled /> Foreign Trade Zones </p>
+            <p><input type="radio" name="input" value="EnforcementAndCompliance" disabled /> Enforcement and Compliance Highlights </p>
+            <!-- one more maybe? Petition -->
+            <input type="button" value="Continue" onclick="goToFileUploadForm();"/>
+            <button type="reset" value="Reset">Reset</button>
+        </form>                
+        
+        <form name="fileUploadForm" action="" method="post" enctype="multipart/form-data" style="position: absolute; top:50px; left:100px; width:600px; height:25px" >
+            
+            <input type="button" value="Home" onClick="goToHomeForm();" />
+            <h1>File Upload</h1>
+            <br />
+            Browse to select an input Excel data file in order to proceed: 
+            <br />
+            <input type="file" name="file" id="myFile" onchange="enableDescription();"> <br/>
+            <br/><br/>
+            
+            File contents description:
+            <br/>
+            Number of data records (first and last row numbers where first row has to be header)<br/>
+            <input type="text" name="xStart" id="xStart" disabled>  to <input type="text" name="xEnd" id="xEnd" disabled>
+            <br/>
+            Number of data headers (first and last column numbers)<br/>
+            <input type="text" name="yStart" id="yStart" disabled>  to <input type="text" name="yEnd" id="yEnd" disabled> 
+            <br/><br/><br/>
+            
+            <input type="button" value="Upload"  onclick="goToFiltersForm();"/>            
+            <button type="reset" value="Reset">Reset</button>
+            <input type="button" value="Choose File - Java"  onclick="chooseFileJava()"/>
+            
+        </form>
+        
+        <form name="TANCFilterForm" method="get"  action="" style="position: absolute; top:50px; left:100px; width:600px; height:25px">
+            
+            <input type="button" value="Home" onClick="goToHomeForm();"/>    
+            
+            <h1>Filters to apply on TANC Casework Data</h1>
+            <br/>
+            
+            <label><strong>Select a type of date as well as the date range: </strong></label><br/>    
+            <p>
+                <input type="radio" name="filter2tanc" value="init" onClick="chkdatetanc();"/> Cases Initiated      
+                <input type="text" name="fromtanc1" id="fromtanc1" disabled/> to  <input type="text" name="totanc1" id="totanc1" disabled />
+            </p>
+            <p>
+                <input type="radio" name="filter2tanc" value="close" onClick="chkdatetanc();"/> Cases Closed        
+                <input type="date" name="fromtanc2" id="fromtanc2" disabled/> to  <input type="date" name="totanc2" id="totanc2" disabled /><br/>
+            </p>                
+            <p>
+                <input type="radio" name="filter2tanc" value="success" onClick="chkdatetanc();"/> Cases of Success      
+                <input type="date" name="fromtanc3" id="fromtanc3" disabled/> to  <input type="date" name="totanc3" id="totanc3" disabled /><br/>
+            </p>
+            <br/>
+            
+            <label><strong>Select a company type:</strong></label><br/>    
+            <p>
+                <input type="radio" checked name="tancSMEFilter" value="All"/> All Organizations (Default) 
+            </p>
+            <p>
+                <input type="radio" name="tancSMEFilter" value="SME"/> Small and Medium Sized Enterprises only 
+            
+            </p>
+            <br/>
+            
+            <label><strong>Select the country(s) involved: </strong></label><br/>
+            <p>
+                <input type="radio" checked name="country" value="all" onClick="chkcountrytanc();"/> All (Default)                
+            </p>
+            <p>
+                <input type="radio" name="country" value="list" onClick="chkcountrytanc();" disabled/>   
+                <select name="countryList" multiple disabled>   
+                <option value = "AFG">Afghanistan</option>
+                <option value = "ALB">Albania</option>
+                <option value = "DZA">Algeria</option>
+                <option value = "ASM">American Samoa</option>                
+                <option value = "AND">Andorra</option>
+                <option value = "AGO">Angola</option>
+                <option value = "AIA">Anguilla</option>
+                <option value = "ATA">Antarctica</option>
+                <option value = "ATG">Antigua and Barbuda</option>
+                <option value = "ARG">Argentina</option>
+                <option value = "ARM">Armenia</option>
+                <option value = "ABW">Aruba</option>
+                <option value = "AUS">Australia</option>
+                <option value = "AUT">Austria</option>
+                <option value = "AZE">Azerbaijan</option>
+                <option value = "BHS">Bahamas</option>
+                <option value = "BHR">Bahrain</option>
+                <option value = "BGD">Bangladesh</option>
+                <option value = "BRB">Barbados</option>
+                <option value = "BLR">Belarus</option>
+                <option value = "BEL">Belgium</option>
+                <option value = "BLZ">Belize</option>
+                <option value = "BEN">Benin</option>
+                <option value = "BMU">Bermuda</option>
+                <option value = "BTN">Bhutan</option>
+                <option value = "BOL">Bolivia</option>
+                <option value = "BIH">Bosnia Herzegovina</option>
+                <option value = "BWA">Botswana</option>
+                <option value = "BVT">Bouvet Island</option>
+                <option value = "BRA">Brazil</option>
+                <option value = "IOT">British Indian Ocean Territory</option>
+                <option value = "BRN">Brunei</option>
+                <option value = "BGR">Bulgaria</option>
+                <option value = "BFA">Burkina Faso</option>
+                <option value = "BDI">Burundi</option>
+                <option value = "KHM">Cambodia</option>
+                <option value = "CMR">Cameroon</option>
+                <option value = "CAN">Canada</option>
+                <option value = "CPV">Cape Verde</option>
+                <option value = "CYM">Cayman Islands</option>
+                <option value = "CAF">Central African Republic</option>
+                <option value = "TCD">Chad</option>
+                <option value = "CHL">Chile</option>
+                <option value = "CHN">China</option>
+                <option value = "COL">Colombia</option>
+                <option value = "COM">Comoros</option>
+                <option value = "COD">Congo (Democratic Republic)</option>
+                <option value = "COG">Congo (Republic)</option>
+                <option value = "COK">Cook Islands</option>
+                <option value = "CRI">Costa Rica</option>
+                <option value = "CIV">Cote d'Ivoire</option>
+                <option value = "HRV">Croatia</option>
+                <option value = "CUB">Cuba</option>
+                <option value = "CYP">Cyprus</option>
+                <option value = "CZE">Czech Republic</option>
+                <option value = "DNK">Denmark</option>
+                <option value = "DJI">Djibouti</option>
+                <option value = "DMA">Dominica</option>
+                <option value = "DOM">Dominican Republic</option>
+                <option value = "TMP">East Timor</option>
+                <option value = "ECU">Ecuador</option>
+                <option value = "EGY">Egypt</option>
+                <option value = "SLV">El Salvador</option>
+                <option value = "GNQ">Equatorial Guinea</option>
+                <option value = "ERI">Eritrea</option>
+                <option value = "EST">Estonia</option>
+                <option value = "ETH">Ethiopia</option>
+                <option value = "EUN">European Union</option>
+                <option value = "FNK">Falkland Islands (Malvinas)</option>
+                <option value = "FRO">Faroe Islands</option>
+                <option value = "FJI">Fiji</option>
+                <option value = "FIN">Finland</option>
+                <option value = "FRA">France</option>
+                <option value = "FXX">France, Metropolitan</option>
+                <option value = "GUF">French Guiana</option>
+                <option value = "PYF">French Polynesia</option>
+                <option value = "ATF">French Southern Territories</option>
+                <option value = "GAB">Gabon</option>
+                <option value = "GMB">Gambia</option>
+                <option value = "GEO">Georgia</option>
+                <option value = "DEU">Germany</option>
+                <option value = "GHA">Ghana</option>
+                <option value = "GIB">Gibraltar</option>
+                <option value = "GRC">Greece</option>
+                <option value = "GRL">Greenland</option>
+                <option value = "GRD">Grenada</option>
+                <option value = "GLP">Guadeloupe</option>
+                <option value = "GUM">Guam</option>
+                <option value = "GTM">Guatemala</option>
+                <option value = "GIN">Guinea</option>
+                <option value = "GNB">Guinea-Bissau</option>
+                <option value = "GUY">Guyana</option>
+                <option value = "HTI">Haiti</option>
+                <option value = "HMD">Heard and Mc Donald Islands</option>
+                <option value = "VAT">Holy See (Vatican City State)</option>
+                <option value = "HND">Honduras</option>
+                <option value = "HKG">Hong Kong</option>
+                <option value = "HUN">Hungary</option>
+                <option value = "ISL">Iceland</option>
+                <option value = "IND">India</option>
+                <option value = "IDN">Indonesia</option>
+                <option value = "IRN">Iran</option>
+                <option value = "IRQ">Iraq</option>
+                <option value = "IRL">Ireland</option>
+                <option value = "ISR">Israel</option>
+                <option value = "ITA">Italy</option>
+                <option value = "JAM">Jamaica</option>
+                <option value = "JPN">Japan</option>
+                <option value = "JOR">Jordan</option>
+                <option value = "KAZ">Kazakhstan</option>
+                <option value = "KEN">Kenya</option>
+                <option value = "KIR">Kiribati</option>
+                <option value = "PRK">Korea, D.P.R.O</option>
+                <option value = "KOR">Korea (South)</option>
+                <option value = "KOS">Kosovo</option>
+                <option value = "KWT">Kuwait</option>
+                <option value = "KGZ">Kyrgyzstan</option>
+                <option value = "LAO">Laos</option>
+                <option value = "LVA">Latvia</option>
+                <option value = "LBN">Lebanon</option>
+                <option value = "LSO">Lesotho</option>
+                <option value = "LBR">Liberia</option>
+                <option value = "LBY">Libya</option>
+                <option value = "LIE">Liechtenstein</option>
+                <option value = "LTU">Lithuania</option>
+                <option value = "LUX">Luxembourg</option>
+                <option value = "MAC">Macau</option>
+                <option value = "MKD">Macedonia</option>
+                <option value = "MDG">Madagascar</option>
+                <option value = "MWI">Malawi</option>
+                <option value = "MYS">Malaysia</option>
+                <option value = "MDV">Maldives</option>
+                <option value = "MLI">Mali</option>
+                <option value = "MLT">Malta</option>
+                <option value = "MHL">Marshall Islands</option>
+                <option value = "MTQ">Martinique</option>
+                <option value = "MRT">Mauritania</option>
+                <option value = "MUS">Mauritius</option>
+                <option value = "MYT">Mayotte</option>
+                <option value = "MEX">Mexico</option>
+                <option value = "FSM">Micronesia</option>
+                <option value = "MDA">Moldova</option>
+                <option value = "MCO">Monaco</option>
+                <option value = "MNG">Mongolia</option>
+                <option value = "MNE">Montenegro</option>
+                <option value = "MSR">Montserrat</option>
+                <option value = "MAR">Morocco</option>
+                <option value = "MOZ">Mozambique</option>
+                <option value = "MMR">Myanmar</option>
+                <option value = "NAM">Namibia</option>
+                <option value = "NRU">Nauru</option>
+                <option value = "NPL">Nepal</option>
+                <option value = "NLD">Netherlands</option>
+                <option value = "ANT">Netherlands Antilles</option>
+                <option value = "NCL">New Caledonia</option>
+                <option value = "NZL">New Zealand</option>
+                <option value = "NIC">Nicaragua</option>
+                <option value = "NER">Niger</option>
+                <option value = "NGA">Nigeria</option>
+                <option value = "NIU">Niue</option>
+                <option value = "NFK">Norfolk Island</option>
+                <option value = "MNP">Northern Mariana Islands</option>
+                <option value = "NOR">Norway</option>
+                <option value = "OMN">Oman</option>
+                <option value = "PAK">Pakistan</option>
+                <option value = "PLW">Palau</option>
+                <option value = "PAN">Panama</option>
+                <option value = "PNG">Papua New Guinea</option>
+                <option value = "PRY">Paraguay</option>
+                <option value = "PER">Peru</option>
+                <option value = "PHL">Philippines</option>
+                <option value = "POL">Poland</option>
+                <option value = "PRT">Portugal</option>
+                <option value = "PRI">Puerto Rico</option>
+                <option value = "QAT">Qatar</option>
+                <option value = "REU">Reunion</option>
+                <option value = "ROM">Romania</option>
+                <option value = "RUS">Russia</option>
+                <option value = "RWA">Rwanda</option>
+                <option value = "KNA">St Kitts and Nevis</option>
+                <option value = "LCA">St Lucia</option>
+                <option value = "VCT">Saint Vincent and the Grenadines</option>
+                <option value = "WSM">Samoa</option>
+                <option value = "SMR">San Marino</option>
+                <option value = "STP">Sao Tome and Principe</option>
+                <option value = "SAU">Saudi Arabia</option>
+                <option value = "SEN">Senegal</option>
+                <option value = "SRB">Serbia</option>
+                <option value = "SRM">Serbia and Montenegro</option>
+                <option value = "SYC">Seychelles</option>
+                <option value = "SLE">Sierra Leone</option>
+                <option value = "SGP">Singapore</option>
+                <option value = "SVK">Slovak Republic</option>
+                <option value = "SVN">Slovenia</option>
+                <option value = "SLB">Solomon Islands</option>
+                <option value = "SOM">Somalia</option>
+                <option value = "ZAF">South Africa</option>
+                <option value = "SSD">South Sudan</option>
+                <option value = "SGS">South Georgia and South S.S.</option>
+                <option value = "ESP">Spain</option>
+                <option value = "LKA">Sri Lanka</option>
+                <option value = "SHN">St. Helena</option>
+                <option value = "SPM">St. Pierre and Miquelon</option>
+                <option value = "SDN">Sudan</option>
+                <option value = "SUR">Suriname</option>
+                <option value = "SJM">Svalbard and Jan Mayen Islands</option>
+                <option value = "SWZ">Swaziland</option>
+                <option value = "SWE">Sweden</option>
+                <option value = "CHE">Switzerland</option>
+                <option value = "SYR">Syria</option>
+                <option value = "TWN">Taiwan</option>
+                <option value = "TJK">Tajikistan</option>
+                <option value = "TZA">Tanzania</option>
+                <option value = "THA">Thailand</option>
+                <option value = "TGO">Togo</option>
+                <option value = "TKL">Tokelau</option>
+                <option value = "TON">Tonga</option>
+                <option value = "TTO">Trinidad and Tobago</option>
+                <option value = "TUN">Tunisia</option>
+                <option value = "TUR">Turkey</option>
+                <option value = "TKM">Turkmenistan</option>
+                <option value = "TCA">Turks and Caicos Islands</option>
+                <option value = "TUV">Tuvalu</option>
+                <option value = "UGA">Uganda</option>
+                <option value = "UKR">Ukraine</option>
+                <option value = "ARE">United Arab Emirates</option>
+                <option value = "GBR">United Kingdom</option>
+                <option value = "USA">United States</option>
+                <option value = "UMI">U.S. Minor Islands</option>
+                <option value = "URY">Uruguay</option>
+                <option value = "UZB">Uzbekistan</option>
+                <option value = "VUT">Vanuatu</option>
+                <option value = "VEN">Venezuela</option>
+                <option value = "VNM">Vietnam</option>
+                <option value = "YEM">Yemen</option>
+                <option value = "ZMB">Zambia</option>
+                <option value = "ZWE">Zimbabwe</option>
+            </select>
+            </p>      
+            <br/>
+            
+            <label><strong>Select an industry: </strong></label><br/>
+            <p>
+                <select name="industry">
+                    <option value = "1" selected>All (Default)</option>
+                    <option value = "2">Aerospace</option>
+                    <option value = "3">Automobiles</option>
+                    <option value = "4">Consumer Goods</option>
+                    <option value = "5">E-Commerce</option>
+                    <option value = "6">Energy</option>
+                    <option value = "7">Environmental technologies</option>
+                    <option value = "8">Financial services</option>
+                    <option value = "9">Healthcare products</option>
+                    <option value = "10">Information Technologies</option>
+                    <option value = "11">Legacy Record</option>
+                    <option value = "12">Machinery</option>
+                    <option value = "13">Materials</option>
+                    <option value = "14">Services industries</option>
+                    <option value = "15">Telecommunications</option>
+                    <option value = "16">Textiles and apparel, footwear</option>
+                    <option value = "17">Textiles and apparel, leather products</option>
+                    <option value = "18">Textiles and apparel, textiles and apparel</option>
+                    <option value = "19">Travel goods</option>
+                    <option value = "20">Travel and tourism</option>
+                    <option value = "21">Other</option>
+                </select>
+            </p>
+            <br/>
+            
+            <label><strong>Select an issue: </strong></label><br/>
+            <p>
+                <select name="issues" disabled>
+                    <option value = "1" selected>All (Default)</option>
+                    <option value = "2">Antidumping</option>
+                    <option value = "3">Competition with SOEs</option>
+                    <option value = "4">Country of Origin</option>
+                    <option value = "5">Customs: Classification</option>
+                    <option value = "6">Customs: Fees and Formalities</option>
+                    <option value = "7">Customs: General</option>
+                    <option value = "8">Customs: Procedures</option>
+                    <option value = "9">Customs: Valuation</option>
+                    <option value = "10">Environment</option>
+                    <option value = "11">Export Measures: General</option>
+                    <option value = "12">Export Measures: Restrictions</option>
+                    <option value = "13">Export Measures: Taxes</option>
+                    <option value = "14">Government procurement</option>
+                    <option value = "15">Import Licensing</option>
+                    <option value = "16">Investment</option>
+                    <option value = "17">IPR: Copyright</option>
+                    <option value = "18">IPR: General</option>
+                    <option value = "19">IPR: Patent</option>
+                    <option value = "20">IPR: Trade Secret</option>
+                    <option value = "21">IPR: Trademark</option>
+                    <option value = "22">Labor</option>
+                    <option value = "23">National treatment</option>
+                    <option value = "24">Other Non-Case Issues: Contract Dispute</option>
+                    <option value = "25">Other Non-Case Issues: Employee Dispute</option>
+                    <option value = "26">Other Non-Case Issues: General</option>
+                    <option value = "27">Other Non-Case Issues: Nonpayment</option>
+                    <option value = "28">Other: Case Issues</option>
+                    <option value = "29">Pre-shipment Inspection</option>
+                    <option value = "30">Pricing/Reimbursement</option>
+                    <option value = "31">Quotas and Import Prohibitions</option>
+                    <option value = "32">Safeguards</option>
+                    <option value = "33">Services</option>
+                    <option value = "34">Standards</option>
+                    <option value = "35">Structural Impediments/Regulatory Reform</option>
+                    <option value = "36">Subsidies</option>
+                    <option value = "37">Tariffs</option>
+                    <option value = "38">Taxes, Not Export</option>
+                </select>
+            </p>
+            <br/>
+            
+            <label><strong>Publicity permission check: </strong></label><br/>      
+                <p>
+                    <input type="radio" checked name="filter6" value="All" disabled/> All (Default) 
+                </p>
+                <p>
+                    <input type="radio" name="filter6" value="Granted" disabled/> Publicity permission granted 
+                </p>
+            <br/>    
+            
+            <label><strong>Select FTA relevance: </strong></label><br/>
+            <p>
+            <select name= "filter7" disabled>
+                <option value = "0" selected>All (Default)</option>
+                <option value = "1">Australia Free Trade Agreement</option>
+                <option value = "2">Bahrain Free Trade Agreement</option>
+                <option value = "3">Central American/Dominican Republic Free Trade Agreement</option>
+                <option value = "4">Chile Free Trade Agreement</option>
+                <option value = "5">Colombia Trade Promotion Agreement</option>
+                <option value = "6">Israel Free Trade Agreement</option>
+                <option value = "7">Jordan Free Trade Agreement</option>
+                <option value = "8">Korea Free Trade Agreement</option>
+                <option value = "9">Morocco Free Trade Agreement</option>
+                <option value = "10">NAFTA Chapter 10, Government Procurement</option>
+                <option value = "11">NAFTA Chapter 11, Investment</option>
+                <option value = "12">NAFTA Chapter 12, Cross Border Trade in Services</option>
+                <option value = "13">NAFTA Chapter 13, Telecom</option>
+                <option value = "14">NAFTA Chapter 14, Financial Services</option>
+                <option value = "15">NAFTA Chapter 15, Competition</option>
+                <option value = "16">NAFTA Chapter 16, Temporary Entry</option>
+                <option value = "17">NAFTA Chapter 17, Intellectual Property Rights</option>
+                <option value = "18">NAFTA Chapter 18, Notification</option>
+                <option value = "19">NAFTA Chapter 19, Anti-Dumping/Countervailing Duties</option>
+                <option value = "20">NAFTA Chapter 20, Dispute Settlement</option>
+                <option value = "21">NAFTA Chapter 3,  National Treatment and Market Access for Goods</option>
+                <option value = "22">NAFTA Chapter 3, Annex 300A Automotive Sector</option>
+                <option value = "23">NAFTA Chapter 3, Annnex 300B Textiles and Apparel</option>
+                <option value = "24">NAFTA Chapter 4, Rules of Origin</option>
+                <option value = "25">NAFTA Chapter 5, Customs Procedures</option>
+                <option value = "26">NAFTA Chapter 6, Energy</option>
+                <option value = "27">NAFTA Chapter 7, Agriculture</option>
+                <option value = "28">NAFTA Chapter 8, Emergency Action</option>
+                <option value = "29">NAFTA Chapter 9, Standards</option>
+                <option value = "30">NAFTA General Provisions</option>
+                <option value = "31">NAFTA Market Access including Article 304/Maquiladoras</option>
+                <option value = "32">North American Free Trade Side Agreement on Environmental Cooperation</option>
+                <option value = "33">North American Free Trade Side Agreement on Labor Cooperation</option>
+                <option value = "34">Oman FTA </option>
+                <option value = "35">Ongoing FTA</option>
+                <option value = "36">Panama Trade Promotion Agreement</option>
+                <option value = "37">Peru Trade Promotion Agreement</option>
+                <option value = "38">Singapore Free Trade Agreement</option>
+            </select><p>
+            <br/>
+            
+            <label><strong>Select WTO relevance: </strong></label><br/>
+            <p><select name= "filter8" disabled>
+                <option value = "0" selected>All (Default)</option>
+                <option value = "1">WTO Agreement on Trade in Goods: GATT Article III</option>
+                <option value = "2">WTO: Agreement on Government Procurement</option>
+                <option value = "3">WTO: Agreement on Trade in Civil Aircraft</option>
+                <option value = "4">WTO: Agreement on Trade-related Aspects of Intellectual Property Rights</option>
+                <option value = "5">WTO: Basic Telecommunications Services Agreement</option>
+                <option value = "6">WTO: China Accession Agreement</option>
+                <option value = "7">WTO: Final Act-results of the Uruguay Round</option>
+                <option value = "8">WTO: General Agreement on Trade in Services</option>
+                <option value = "9">WTO: Information Technology Agreement</option>
+                <option value = "10">WTO: Marrakesh Agreement Establishing the World Trade Organization</option>
+                <option value = "11">WTO: Marrakesh Protocol</option>
+                <option value = "12">WTO: Multilateral Agreements on Trade in Goods</option>
+                <option value = "13">WTO: Multilateral Agreements on Trade in Goods - Agriculture</option>
+                <option value = "14">WTO: Multilateral Agreements on Trade in Goods - Antidumping</option>
+                <option value = "15">WTO: Multilateral Agreements on Trade in Goods - Customs Valuation</option>
+                <option value = "16">WTO: Multilateral Agreements on Trade in Goods - GATT 1947</option>
+                <option value = "17">WTO: Multilateral Agreements on Trade in Goods - Preshipment Inspection</option>
+                <option value = "18">WTO: Multilateral Agreements on Trade in Goods - Rules of Origin</option>
+                <option value = "19">WTO: Multilateral Agreements on Trade in Goods - Safeguards</option>
+                <option value = "20">WTO: Multilateral Agreements on Trade in Goods - Sanitary/Phytosanitary</option>
+                <option value = "21">WTO: Multilateral Agreements on Trade in Goods - Subsidies/ Countervailing</option>
+                <option value = "22">WTO: Multilateral Agreements on Trade in Goods - Technical Barriers</option>
+                <option value = "23">WTO: Multilateral Agreements on Trade in Goods - Textiles and Clothing</option>
+                <option value = "24">WTO: Multilateral Agreements on Trade in Goods - TRIMs</option>
+                <option value = "25">WTO: Multilateral Agreements on Trade in Goods--Import Licensing</option>
+                <option value = "26">WTO: Taiwan Accession Agreement</option>
+                <option value = "27">WTO: Understanding on Commitments in Financial Services</option>
+                <option value = "28">WTO: Understanding on Settlement of Disputes</option>
+            </select></p>
+            
+            <br/>
+            
+            <label><strong>Select whether to display dollar value of success: </strong></label> <br/>
+            <p>
+                <input type="radio" checked name="filter9" value="true"/> Display (Default)
+            </p>
+            <p>
+                <input type="radio" name="filter9" value="false" disabled/> Do not display 
+            </p>
+            <br/>
+            
+            <!-- next two filters disabled as data does not exist yet -->
+            <label><strong>Select whether to display dollar value of market access: </strong></label><br/>      
+            <p>
+                <input type="radio" checked name="filter10" value="true" disabled /> Do not display (Default)
+            </p>
+            <p>
+                <input type="radio" name="filter10" value="false" disabled /> Display ($ in Millions) 
+            </p>
+            <br/>
+            
+            <label><strong>Select whether to display estimated number of employees affected: s</strong></label><br/>      
+            <p>
+                <input type="radio" checked name="filter11" value="true" disabled /> Do not display (Default) 
+            </p>
+            <p>
+                <input type="radio" name="filter11" value="false" disabled /> Display 
+            </p>
+            <br/>
+            
+            <input type="button" value="Continue" onclick="mapview();" />
+            <button type="reset" value="Reset">Reset</button>
+            
+        </form>
+        
+        
+        <form name="mapDisplayTypeForm" method="get" action="" style="position: absolute; top:50px; left:100px; width:400px; height:25px">
+            
+            <input type="button" value="Home" onClick="goToHomeForm();"/>
+            
+            <h1>I want to display data by</h1>
+            
+            <p>
+                <input type="radio" name="output" value="pins" disabled/> Pins of locations USA map 
+            </p>
+            <p>
+                <input type="radio" name="output" value="dotus" disabled/> Dots of varying sizes USA map 
+            </p>
+            <p>
+                <input type="radio" name="output" value="dotworld" disabled/> Dots of varying sizes Worldwide map 
+            </p>
+            <p>
+                <input type="radio" name="output" value="shadeus"/> Shaded State USA map 
+            </p>
+            <p>
+                <input type="radio" name="output" value="shadeworld"/> Shaded Country Worldwide map 
+            </p>
+            <br/>
+            <input type="button" value="Continue" onclick="showmap();"/>
+            <button type="reset" value="Reset">Reset</button>
+            
+        </form>
+        
+        <form name="finalmap" method="get" action="" style="position: absolute; top:50px; left:100px; width:400px; height:25px">
+            <input type="button" value="Home" onClick="goToHomeForm();">
+            <input type="button" value="Save Map Image" onclick="savemap();"/>
+            <div id="container" style="position: absolute; top: 180px; width: 1000px; max-height: 700px"></div>            
+        </form>
+        
+        
+
+        <script src="scripts/d3.min.js"></script>
+        <script src="scripts/topojson.v1.min.js"></script>
+        <script src="scripts/datamaps.all.min.js"></script>
+        
+        <script type="text/javascript" >
+            
+            window.onload = function () {
+                document.forms["dataCategoryForm"].style.visibility="visible";
+                document.forms["fileUploadForm"].style.visibility="hidden";
+                document.forms["TANCFilterForm"].style.visibility="hidden";
+                document.forms["mapDisplayTypeForm"].style.visibility="hidden";
+                document.forms["finalmap"].style.visibility="hidden";
+                document.forms["adcvdFilterForm"].style.visibility="hidden";
+                document.forms["adcvdFilterForm"].style.visibility="hidden";
+                document.forms["filtertrade"].style.visibility="hidden";
+                document.forms["filterlaw"].style.visibility="hidden";
+                document.forms["filterftz"].style.visibility="hidden";
+            };
+                        
+            var dataCategory; //category of data from first form - set in goToFileUploadForm
+            var dataRecords;  //JSON object string containing excel file records
+            
+            //TANC Filter Options variables
+            var dateOption; //either init, close, success - pass true onto method if its success
+            var companyOption; // all or SME only -- smeFilter used below instead
+            var countryOption; //all or list
+            var countryList; //if list then list of countries selected
+            var industryOption; //all or other specific selected value
+            var issueOption; //all or other specific selected value
+            var publicityOption; //granted or not - if not then different values with numbers
+            var agreementOption; // either FTA or WTO or both
+            var successValueOption; // either true or false on whether or not to display
+            var marketAccessOption;
+            var empAffectedOption;
+            
+            var successFilter = false; // boolean, default = false
+            var dateInitiateFilterFrom = null; // String, default = null
+            var dateInitiateFilterTo = null; // String, default = null
+            var dateCloseFilterFrom = null; // String, default = null
+            var dateCloseFilterTo = null; // String, default = null
+            var smeFilter = false; // boolean, default = false; -- indu
+            /*
+            var countryFilter; // NOT Defined yet, Abbreviation
+            var industryFilter = null; // String, default = null
+            var issueFilter = null; // String, default = null
+            var publicityPermissionFilter = false; // boolean, default = false
+            var ftaFilter = null; // String, default = null
+            var wtoFilter = null; // String, default = null
+            */
+           
+            var valueFilter = false; // boolean: display or not, default is true
+            
+            /*
+            var affectedEmployeeFilter = false; // which attribute?
+            */
+            var countryAbbreviationTable = getCountryAbb();
+            
+            var usOnlyMapFilter; // only show US map, boolean, default = false to show world shaded map
+            var mapFre = new HashMap(); //store frequency of each record on the map
+            var mapValue; //store accumulated value of each record on the map
+            
+            function goToFileUploadForm() {
+                var whichinput=document.getElementsByName("input");
+                var k;
+                var len=whichinput.length;
+                var checked = false;
+                for (i=0;i<len;i++) {
+                    if(whichinput[i].checked) {
+                        k=i;
+                        checked = true;
+                    }
+                }
+                
+                if (checked === false) {
+                    alert("No input selected - Select one of the data categories");
+                    document.forms["dataCategoryForm"].style.visibility="visible";
+                    document.forms["fileUploadForm"].style.visibility="hidden";
+                    document.forms["TANCFilterForm"].style.visibility="hidden";
+                    document.forms["mapDisplayTypeForm"].style.visibility="hidden";
+                    document.forms["finalmap"].style.visibility="hidden";
+                    document.forms["adcvdFilterForm"].style.visibility="hidden";
+                    document.forms["filtertrade"].style.visibility="hidden";
+                    document.forms["filterlaw"].style.visibility="hidden";
+                    document.forms["filterftz"].style.visibility="hidden";                    
+                } else {
+                    dataCategory = whichinput[k].value;
+                    document.forms["dataCategoryForm"].style.visibility="hidden";
+                    document.forms["fileUploadForm"].style.visibility="visible";
+                    document.forms["TANCFilterForm"].style.visibility="hidden";
+                    document.forms["mapDisplayTypeForm"].style.visibility="hidden";
+                    document.forms["finalmap"].style.visibility="hidden";
+                    document.forms["adcvdFilterForm"].style.visibility="hidden";
+                    document.forms["filtertrade"].style.visibility="hidden";
+                    document.forms["filterlaw"].style.visibility="hidden";
+                    document.forms["filterftz"].style.visibility="hidden";
+                }
+                    
+            }
+            
+            function enableDescription() {
+                if(document.forms["fileUploadForm"]["file"].value !== "") {
+                    document.forms["fileUploadForm"]["xStart"].disabled = false;
+                    document.forms["fileUploadForm"]["xEnd"].disabled = false;
+                    document.forms["fileUploadForm"]["yStart"].disabled = false;
+                    document.forms["fileUploadForm"]["yEnd"].disabled = false;
+                }
+                
+            }
+            
+            function chkdatetanc() {
+                var whichinput=document.getElementsByName("filter2tanc");
+                var k;
+                var len=whichinput.length;
+                for (i=0;i<len;i++) {
+                    if(whichinput[i].checked) {
+                        k=i;
+                    }
+                }
+                dateOption = whichinput[k].value;
+                if(dateOption==="close") {   
+                    document.TANCFilterForm.totanc1.disabled=true;
+                    document.TANCFilterForm.fromtanc1.disabled=true;
+                    document.TANCFilterForm.totanc3.disabled=true;
+                    document.TANCFilterForm.fromtanc3.disabled=true;
+                    document.TANCFilterForm.totanc2.disabled=false;
+                    document.TANCFilterForm.fromtanc2.disabled=false;
+                    
+                    document.TANCFilterForm.totanc1.value="";
+                    document.TANCFilterForm.fromtanc1.value="";
+                    document.TANCFilterForm.totanc3.value="";
+                    document.TANCFilterForm.fromtanc3.value="";
+                    document.TANCFilterForm.totanc2.value="";
+                    document.TANCFilterForm.fromtanc2.value="";
+                } else if(dateOption==="init") {   
+                    document.TANCFilterForm.totanc2.disabled=true;
+                    document.TANCFilterForm.fromtanc2.disabled=true;
+                    document.TANCFilterForm.fromtanc3.disabled=true;
+                    document.TANCFilterForm.totanc3.disabled=true;
+                    document.TANCFilterForm.totanc1.disabled=false;
+                    document.TANCFilterForm.fromtanc1.disabled=false;
+                    
+                    document.TANCFilterForm.totanc1.value="";
+                    document.TANCFilterForm.fromtanc1.value="";
+                    document.TANCFilterForm.totanc3.value="";
+                    document.TANCFilterForm.fromtanc3.value="";
+                    document.TANCFilterForm.totanc2.value="";
+                    document.TANCFilterForm.fromtanc2.value="";
+                } else if(dateOption==="success") {   
+                    document.TANCFilterForm.totanc2.disabled=true;
+                    document.TANCFilterForm.fromtanc2.disabled=true;
+                    document.TANCFilterForm.totanc1.disabled=true;
+                    document.TANCFilterForm.fromtanc1.disabled=true;
+                    document.TANCFilterForm.totanc3.disabled=false;
+                    document.TANCFilterForm.fromtanc3.disabled=false;
+                    
+                    document.TANCFilterForm.totanc1.value="";
+                    document.TANCFilterForm.fromtanc1.value="";
+                    document.TANCFilterForm.totanc3.value="";
+                    document.TANCFilterForm.fromtanc3.value="";
+                    document.TANCFilterForm.totanc2.value="";
+                    document.TANCFilterForm.fromtanc2.value="";
+                } else {
+                    document.TANCFilterForm.totanc1.disabled=true;
+                    document.TANCFilterForm.fromtanc1.disabled=true;
+                    document.TANCFilterForm.totanc3.disabled=true;
+                    document.TANCFilterForm.fromtanc3.disabled=true;
+                    document.TANCFilterForm.totanc2.disabled=true;
+                    document.TANCFilterForm.fromtanc2.disabled=true;
+                    
+                    document.TANCFilterForm.totanc1.value="";
+                    document.TANCFilterForm.fromtanc1.value="";
+                    document.TANCFilterForm.totanc3.value="";
+                    document.TANCFilterForm.fromtanc3.value="";
+                    document.TANCFilterForm.totanc2.value="";
+                    document.TANCFilterForm.fromtanc2.value="";
+                }
+            }               
+            
+            function goToFiltersForm() {
+                var fileName = document.getElementById("myFile").value;
+                if(document.forms["fileUploadForm"]["file"].value !== "") {
+                    // you have a file - check file extension .xls or .xlsx                   
+                    str=document.forms["fileUploadForm"]["file"].value.toUpperCase();
+                    suffix1=".XLSX";
+                    suffix2=".XLS";
+                    if(!(str.indexOf(suffix2, str.length - suffix2.length) !== -1) 
+                            && !(str.indexOf(suffix1, str.length - suffix1.length) !== -1 )) {
+                        alert('File of this extension type not allowed,\nAllowed file: *.xls or *.xlsx');
+                        document.getElementById('file').value='';
+                    }
+
+                    dataRecords = readData(fileName);
+                    //Parse and process json object string created above - retrieving record number of the first element in records array
+                    var contents = jsonParse(dataRecords);
+                    alert("File " + fileName + " selected for category " + dataCategory
+                            +"\nPartial Content: First record number - " +  contents["records"][0]["Record Number"]);
+
+            
+                    //if(document.getElementById())
+                    if(dataCategory==="TancCases") {
+                        document.forms["dataCategoryForm"].style.visibility="hidden";
+                        document.forms["fileUploadForm"].style.visibility="hidden";
+                        document.forms["TANCFilterForm"].style.visibility="visible";
+                        document.forms["mapDisplayTypeForm"].style.visibility="hidden";
+                        document.forms["finalmap"].style.visibility="hidden";
+                        document.forms["adcvdFilterForm"].style.visibility="hidden";
+                        document.forms["filtertrade"].style.visibility="hidden";
+                        document.forms["filterlaw"].style.visibility="hidden";
+                        document.forms["filterftz"].style.visibility="hidden";
+                    } else if(dataCategory==="AdCvdActions") {
+                        document.forms["dataCategoryForm"].style.visibility="hidden";
+                        document.forms["fileUploadForm"].style.visibility="hidden";
+                        document.forms["TANCFilterForm"].style.visibility="hidden";
+                        document.forms["mapDisplayTypeForm"].style.visibility="hidden";
+                        document.forms["finalmap"].style.visibility="hidden";
+                        document.forms["adcvdFilterForm"].style.visibility="visible";
+                        document.forms["filtertrade"].style.visibility="hidden";
+                        document.forms["filterlaw"].style.visibility="hidden";
+                        document.forms["filterftz"].style.visibility="hidden";
+                    } else if(dataCategory==="TradeRemedyActions") {
+                        document.forms["dataCategoryForm"].style.visibility="hidden";
+                        document.forms["fileUploadForm"].style.visibility="hidden";
+                        document.forms["TANCFilterForm"].style.visibility="hidden";
+                        document.forms["mapDisplayTypeForm"].style.visibility="hidden";
+                        document.forms["finalmap"].style.visibility="hidden";
+                        document.forms["adcvdFilterForm"].style.visibility="hidden";
+                        document.forms["filtertrade"].style.visibility="visible";
+                        document.forms["filterlaw"].style.visibility="hidden";
+                        document.forms["filterftz"].style.visibility="hidden";
+                    } else if(dataCategory==="Foreign tarde zone") {
+                        document.forms["dataCategoryForm"].style.visibility="hidden";
+                        document.forms["fileUploadForm"].style.visibility="hidden";
+                        document.forms["TANCFilterForm"].style.visibility="hidden";
+                        document.forms["mapDisplayTypeForm"].style.visibility="hidden";
+                        document.forms["finalmap"].style.visibility="hidden";
+                        document.forms["adcvdFilterForm"].style.visibility="hidden";
+                        document.forms["filtertrade"].style.visibility="hidden";
+                        document.forms["filterlaw"].style.visibility="hidden";
+                        document.forms["filterftz"].style.visibility="visible";
+                    } else if(dataCategory==="EnforcementAndCompliance") {
+                        document.forms["dataCategoryForm"].style.visibility="hidden";
+                        document.forms["fileUploadForm"].style.visibility="hidden";
+                        document.forms["TANCFilterForm"].style.visibility="hidden";
+                        document.forms["mapDisplayTypeForm"].style.visibility="hidden";
+                        document.forms["finalmap"].style.visibility="hidden";
+                        document.forms["adcvdFilterForm"].style.visibility="hidden";
+                        document.forms["filtertrade"].style.visibility="hidden";
+                        document.forms["filterlaw"].style.visibility="visible";
+                        document.forms["filterftz"].style.visibility="hidden";                        
+                    }
+                    // document.forms["myform"]["firstname"].value;
+                } else {
+                    alert('Must Select any of your file for upload!');
+                }
+            }  
+            
+            function goToHomeForm() {
+                location.reload();
+                location.reload();
+            }
+            
+            function mapview() {                
+                var noErrors = true;
+                
+                if (dateOption === "init") {
+                    dateInitiateFilterFrom = document.getElementById("fromtanc1").value;
+                    dateInitiateFilterTo = document.getElementById("totanc1").value;
+                    
+                    if (dateInitiateFilterFrom==="" || dateInitiateFilterTo==="") {
+                        alert("Date initiated cannot be empty. Reset values or enter a date!");
+                        noErrors = false;
+                        if (dateInitiateFrom === "") 
+                            document.forms["TANCFilterForm"].fromtanc1.focus();
+                        else 
+                            document.forms["TANCFilterForm"].totanc1.focus();
+                    } else {
+                        alert("Date initiated from " + dateInitiateFilterFrom + " to " + dateInitiateFilterTo);
+                    }
+                } else if (dateOption === "close") {
+                    dateCloseFilterFrom = document.getElementById("fromtanc2").value;
+                    dateCloseFilterTo = document.getElementById("totanc2").value;
+                    
+                    if (dateCloseFilterFrom==="" || dateCloseFilterTo==="") {
+                        alert("Date closed cannot be empty. Reset values or enter a date!");
+                        noErrors = false;
+                        if (dateCloseFilterFrom === "") 
+                            document.forms["TANCFilterForm"].fromtanc2.focus();
+                        else 
+                            document.forms["TANCFilterForm"].totanc2.focus();
+                    } else {
+                        alert("Date closed from " + dateCloseFilterFrom + " to " + dateCloseFilterTo);
+                    }                
+                } else if (dateOption === "success") {
+                    dateCloseFilterFrom = document.getElementById("fromtanc3").value;
+                    dateCloseFilterTo = document.getElementById("totanc3").value;
+                            
+                    if (dateCloseFilterFrom==="" || dateCloseFilterTo==="") {
+                        alert("Date success cannot be empty. Reset values or enter a date!");
+                        noErrors = false;
+                        if (dateCloseFilterFrom === "") 
+                            document.forms["TANCFilterForm"].fromtanc3.focus();
+                        else 
+                            document.forms["TANCFilterForm"].totanc3.focus();
+                    } else {
+                        alert("Date success from " + dateCloseFilterFrom + " to " + dateCloseFilterTo);
+                    }                    
+                }
+                
+                var whichinput=document.getElementsByName("tancSMEFilter");
+                var k;
+                var len=whichinput.length;
+                for (i=0;i<len;i++) {
+                    if(whichinput[i].checked) {
+                        k=i;
+                    }
+                }
+                
+                var smeInput = whichinput[k].value;
+                if(smeInput === "All") {
+                    smeFilter = false;
+                } else {
+                    smeFilter = true;
+                }
+                
+                if (noErrors === true) {
+                    document.forms["dataCategoryForm"].style.visibility="hidden";
+                    document.forms["fileUploadForm"].style.visibility="hidden";
+                    document.forms["TANCFilterForm"].style.visibility="hidden";
+                    document.forms["mapDisplayTypeForm"].style.visibility="visible";
+                    document.forms["finalmap"].style.visibility="hidden";
+                    document.forms["adcvdFilterForm"].style.visibility="hidden";
+                    document.forms["filtertrade"].style.visibility="hidden";
+                    document.forms["filterlaw"].style.visibility="hidden";
+                    document.forms["filterftz"].style.visibility="hidden";                                
+                }
+                
+            }
+            
+            function showmap() {
+                
+                if (dateOption === "success") 
+                    successFilter = true;
+                else 
+                    successFilter = false;
+                
+                var whichinput=document.getElementsByName("output");
+                var k;
+                var len=whichinput.length;
+                var checked = false;
+                for (i=0;i<len;i++) {
+                    if(whichinput[i].checked) {
+                        k=i;
+                        checked = true;
+                    }
+                }
+                var mapOption;
+                var noErrors = true;
+                if (checked === false) {
+                    alert("Select one of the options to display maps");
+                    noErrors = false;
+                } else {
+                    mapOption = whichinput[k].value;
+                }
+                                         
+                if (mapOption === "shadeus") {
+                    alert("To display Shaded US Map");
+                    usOnlyMapFilter = true;
+                } else if (mapOption === "shadeworld") {
+                    alert("To display Shaded World Map");
+                    usOnlyMapFilter = false;
+                }
+                
+                if (noErrors === true) {
+                    drawMaps();
+                    document.forms["TANCFilterForm"].style.visibility="hidden";
+                    document.forms["mapDisplayTypeForm"].style.visibility="hidden";
+                    document.forms["dataCategoryForm"].style.visibility="hidden";
+                    document.forms["fileUploadForm"].style.visibility="hidden";
+                    document.forms["adcvdFilterForm"].style.visibility="hidden";
+                    document.forms["finalmap"].style.visibility="visible";
+                    document.forms["filtertrade"].style.visibility="hidden";
+                    document.forms["filterftz"].style.visibility="hidden";
+                    document.forms["filterlaw"].style.visibility="hidden";
+                }
+            }
+            
+            function drawMaps() {
+                
+                if (usOnlyMapFilter === false) {
+                    initiateWorldMap(mapFre);
+                    if (valueFilter) {
+                        mapValue = new HashMap();
+                        initiateWorldMap(mapValue);
+                    }
+                } else {	//calculate frequency of each state on the us map
+                    initiateUSMap(mapFre);
+                    if (valueFilter) {
+                        mapValue = new HashMap();
+                        initiateUSMap(mapValue);
+                    }
+                }
+                
+                var EUlist = ["Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark",
+                    "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia",
+                    "Lithuania", "Luxembourg", "Malta", "Netherlands","Poland", "Portugal", "Romania", "Slovak Republic",
+                    "Slovenia", "Spain", "Sweden", "United Kingdom"];
+                
+                // go through each record
+                var contents = jsonParse(dataRecords);
+                var data = contents["records"];
+                
+                for (var record=0;record<data.length;record++) {
+                    
+                    // success filter section, where the success date range is assigned to the case close date check range
+                    if (successFilter === true) {
+                        if(!(data[record]["Success"]) || typeof data[record]["Success"] === 'undefined') {
+                            continue;
+                        }
+                        
+                        if((data[record]["Status"] !== "Closed" || data[record]["Success"] === "FALSE")) {
+                            continue;
+                        }
+                    }		  
+                    
+                    // case date initiate filter section
+                    if (dateInitiateFilterFrom !== null && dateInitiateFilterTo !== null) {
+                        if(!(data[record]["Case Initiated Date"]) || typeof data[record]["Case Initiated Date"] === 'undefined') {
+                            continue;
+                        }
+                        
+                        var tmp1 = data[record]["Case Initiated Date"].split(" "); // remove time and keep only date
+                        var tmp2 = tmp1[0].split("/"); // split mon/day/year
+                        var caseIniDay = parseInt(tmp2[1]);
+                        var caseIniMon = parseInt(tmp2[0]);
+                        var caseIniYear = parseInt(tmp2[2]);
+                        
+                        //skip record which date is earlier than the filter from-date
+                        if (dateInitiateFilterFrom !== null) {
+                            var tmp = dateInitiateFilterFrom.split("/");
+                            var filterIniDayFrom = parseInt(tmp[1]);
+                            var filterIniMonFrom = parseInt(tmp[0]);
+                            var filterIniYearFrom = parseInt(tmp[2]);
+                            
+                            if (caseIniYear < filterIniYearFrom) {
+                                continue;
+                            }
+                            if (caseIniYear === filterIniYearFrom && caseIniMon < filterIniMonFrom) {
+                                continue;
+                            }
+                            if (caseIniYear === filterIniYearFrom && caseIniMon === filterIniMonFrom && caseIniDay < filterIniDayFrom) {
+                                continue;
+                            }
+                        }
+                        
+                        //skip record which date is later than the filter to-date
+                        if (dateInitiateFilterTo !== null) {
+                            var tmp = dateInitiateFilterTo.split("/");
+                            var filterIniDayTo = parseInt(tmp[1]);
+                            var filterIniMonTo = parseInt(tmp[0]);
+                            var filterIniYearTo = parseInt(tmp[2]);
+                            
+                            if (caseIniYear > filterIniYearTo) {
+                                continue;
+                            }
+                            if (caseIniYear === filterIniYearTo && caseIniMon > filterIniMonTo) {
+                                continue;
+                            }
+                            if (caseIniYear === filterIniYearTo && caseIniMon === filterIniMonTo && caseIniDay > filterIniDayTo) {
+                                continue;
+                            }
+                        }
+                    }
+                    
+                    // case date close filter section -- issue with date closed format read from the excel file :s
+                    if (dateCloseFilterFrom !== null && dateCloseFilterTo !== null) {  
+                        if(!(data[record]["Date Closed"]) || typeof data[record]["Date Closed"] === 'undefined') {
+                            continue;
+                        }
+                        
+                        var tmp1 = data[record]["Date Closed"].split(" "); // remove time and keep only date
+                        var tmp2 = tmp1[0].split("/"); // split mon/day/year
+                        var caseCloseDay = parseInt(tmp2[1]);
+                        var caseCloseMon = parseInt(tmp2[0]);
+                        var caseCloseYear = parseInt(tmp2[2]);
+                        
+                        //skip record which date is earlier than the filter from-date
+                        if (dateCloseFilterFrom !== null) {
+                            var tmp = dateCloseFilterFrom.split("/");
+                            var filterCloseDayFrom = parseInt(tmp[1]);
+                            var filterCloseMonFrom = parseInt(tmp[0]);
+                            var filterCloseYearFrom = parseInt(tmp[2]);
+                            
+                            if (caseCloseYear < filterCloseYearFrom) {
+                                continue;
+                            }
+                            if (caseCloseYear === filterCloseYearFrom && caseCloseMon < filterCloseMonFrom) {
+                                continue;
+                            }
+                            if (caseCloseYear === filterCloseYearFrom && caseCloseMon === filterCloseMonFrom && caseCloseDay < filterCloseDayFrom) {
+                                continue;
+                            }
+                        }
+                        
+                        //skip record which date is later than the filter to-date
+                        if (dateCloseFilterTo !== null) {
+                            var tmp = dateCloseFilterTo.split("/");
+                            var filterCloseDayTo = parseInt(tmp[1]);
+                            var filterCloseMonTo = parseInt(tmp[0]);
+                            var filterCloseYearTo = parseInt(tmp[2]);
+                            
+                            if (caseCloseYear > filterCloseYearTo) {
+                                continue;
+                            }
+                            if (caseCloseYear === filterCloseYearTo && caseCloseMon > filterCloseMonTo) {
+				continue;
+                            }
+                            if (caseCloseYear === filterCloseYearTo && caseCloseMon === filterCloseMonTo && caseCloseDay > filterCloseDayTo) {
+                                continue;
+                            }
+                        }
+                    }
+                    
+                    /*
+                     // there should be a country section here
+            
+                     */
+                    
+                    // sme involved filter section, default should be false.
+                    if (smeFilter === true && data[record]["SME Involved"] === "No") {
+                        continue;
+                    }
+                     
+                    /*
+                     // industry filter section, default is null, assuming the value is a string
+                     if (industryFilter != null) {
+                     var curIndustry = data[record]["Industry/Sectors"];
+                     if (curIndustry != industryFilter) {
+                     continue;
+                     }
+                     }
+            
+                     // issueFilter section
+                     if (issueFilter != null) {
+                     var curIssue = data[record]["Issue(s)"];
+                     if (curIssue.indexOf(issueFilter) < 0 ) {
+                     continue;
+                     }
+                     }
+            
+                     // publicity permission filter section, boolean, default = false
+                     if (publicityPermissionFilter === true && data[record]["Publicity Permission"] != "Granted") {
+                     continue;
+                     }
+            
+                     // FTA relevant filter
+                     if (ftaFilter != null) {
+                     var ftaStr = data[record]["Trade Agreement(s)"];
+                     if (ftaStr.indexOf(ftaFilter) < 0) {
+                     continue;
+                     }
+                     }
+            
+                     //WTO relevant filter
+                     if (wtoFilter != null) {
+                     var wtoStr = data[record]["Trade Agreement(s)"];
+                     if (wtoStr.indexOf(wtoFilter) < 0) {
+                     continue;
+                     }
+                     }*/
+                    var NumOfInvalidRecord = 0;
+	  
+                    //default (false) world map
+                    if (usOnlyMapFilter === false) {
+                        
+                        var country = data[record]["Country(s)"];
+                        
+                        if (country.indexOf(",") < 0 && country !== "European Union") {
+                            var cty = countryAbbreviationTable.get(country);
+                            if (cty === null) {
+				document.write("Invalid record: " + country + "<br>");
+				NumOfInvalidRecord = NumOfInvalidRecord + 1;
+                            } 
+                            var tmp = mapFre.get(cty) + 1;
+                            mapFre.put(cty, tmp);			
+                            if (valueFilter) {
+				var curVal = data[record]["Case Value (in $ millions)"];
+				var tmpVal = parseInt(curVal) + mapValue.get(cty);
+				mapValue.put(cty, tmpVal);
+                            }
+                        } else if (country.indexOf("European Union") >= 0) { // EU
+                            var countries = EUlist;
+                            for (var i in countries) {
+				var cty = countryAbbreviationTable.get(countries[i]);
+				if (cty === null) {
+                                    document.write("Invalid record: " + countries[i] + "<br>");
+                                    NumOfInvalidRecord = NumOfInvalidRecord + 1;
+				}
+				var tmp = mapFre.get(cty) + 1;
+				mapFre.put(cty, tmp);
+				if (valueFilter === true) {
+                                    var curVal = data[record]["Case Value (in $ millions)"];
+                                    var tmpVal = parseInt(curVal) + mapValue.get(cty);
+                                    mapValue.put(cty, tmpVal);
+				}
+                            }
+                        } else if (country.indexOf(",") >= 0) {
+                            var countries = country.split(", ");
+                            for (var i in countries) {
+				var cty = countryAbbreviationTable.get(countries[i]);
+				if (cty === null) {
+                                    document.write("Invalid record: " + countries[i] + "<br>");
+                                    NumOfInvalidRecord = NumOfInvalidRecord + 1;
+				}
+				var tmp = mapFre.get(cty) + 1;
+				mapFre.put(cty, tmp);
+				if (valueFilter === true) {
+                                    var curVal = data[record]["Case Value (in $ millions)"];
+                                    var tmpVal = parseInt(curVal) + mapValue.get(cty);
+                                    mapValue.put(cty, tmpVal);
+				}
+                            }
+                        }
+                    } else { // US map
+                        var state = data[record]["Case Address: State"];
+                        if (!mapFre.containsKey(state)) {
+                            NumOfInvalidRecord = NumOfInvalidRecord + 1;
+                        } else {
+                            var tmp = mapFre.get(state) + 1;
+                            mapFre.put(state, tmp);
+                            if (valueFilter === true) {
+				var curVal = data[record]["Case Value (in $ millions)"];
+				var tmpVal = parseInt(curVal) + mapValue.get(cty);
+                                mapValue.put(cty, tmpVal);
+                            }
+                        }
+                    }
+                }
+                
+                
+                var mapScope;
+                if (!usOnlyMapFilter) {
+                    mapScope = 'world';
+                    
+                } else {
+                    mapScope = 'usa';
+                }
+                
+                var mapkeys = mapFre.keys();
+                var myObj = {};
+                for (var i in mapkeys) {
+                    myObj[mapkeys[i]] = {};
+                    if (mapFre.get(mapkeys[i]) >= 10) {
+                        myObj[mapkeys[i]]["fillKey"] = 'HIGH';
+                    } else if (mapFre.get(mapkeys[i]) >= 5) {
+                        myObj[mapkeys[i]]["fillKey"] = 'MEDIUM';
+                    } else if (mapFre.get(mapkeys[i]) === 0) {
+                        myObj[mapkeys[i]]["fillKey"] = 'UNKNOWN';
+                    } else {
+                        myObj[mapkeys[i]]["fillKey"] = 'LOW';
+                    }
+                    myObj[mapkeys[i]]["numberOfCases"] = mapFre.get(mapkeys[i]);
+                    if (valueFilter) {
+                        myObj[mapkeys[i]]["valueOfCases"] = mapValue.get(mapkeys[i]);
+                    }
+                }
+                
+                var map = new Datamap({
+                    scope: mapScope,
+                    element: document.getElementById('container'),
+                    fills: {
+                        HIGH: 'rgb(0,100,0)',
+                        MEDIUM: 'rgb(0,255,0)',
+                        LOW: 'rgb(144,238,144)',
+                        UNKNOWN: 'rgb(192,192,192)',
+                        defaultFill: 'rgb(192,192,192)'
+                    },
+                    data: myObj,
+                    geographyConfig: {
+                        popupTemplate: function(geo, data) {
+                            var returnString = ['<div class="hoverinfo"><strong>',
+                                'Number of cases in ' + geo.properties.name,
+                                ': ' + data.numberOfCases].join('');
+                            if(valueFilter === true) {
+                                returnString = returnString + ['<br>Total value of cases in ' + geo.properties.name,
+                                ': ' + data.valueOfCases,
+                                '</strong></div>'].join('');
+                            }
+                            return returnString;
+                        }
+                    }                
+                });
+                map.legend();        
+                
+            }
+            
+            /* 
+             * --- to take a look at below functions as well as forms 
+             * and modify as above for other case data -----
+             */
+            function chkdateadcase() {
+                var whichinput=document.getElementsByName("filter2adcase");         
+                var k;
+                var len=whichinput.length;
+                for (i=0;i<len;i++) {
+                    if(whichinput[i].checked) {
+                        k=i;
+                    }
+                }
+                if(whichinput[k].value==="close") {   
+                    document.filter.toadcase1.disabled=true;
+                    document.filter.fromadcase1.disabled=true;
+                    document.filter.toadcase2.disabled=false;
+                    document.filter.fromadcase2.disabled=false;
+                } else if(whichinput[k].value==="init") {   
+                    document.filter.toadcase2.disabled=true;
+                    document.filter.fromadcase2.disabled=true;
+                    document.filter.toadcase1.disabled=false;
+                    document.filter.fromadcase1.disabled=false;
+                }
+            }
+            
+            function chkdatetrade() {
+                var whichinput=document.getElementsByName("filter2trade");
+                var k;
+                var len=whichinput.length;
+                for (i=0;i<len;i++) {
+                    if(whichinput[i].checked) {
+                        k=i;
+                    }
+                }
+                if(whichinput[k].value==="close") {   
+                    document.filter.totrade1.disabled=true;
+                    document.filter.fromtrade1.disabled=true;
+                    document.filter.totrade2.disabled=false;
+                    document.filter.fromtrade2.disabled=false;
+                } else if(whichinput[k].value==="init") {   
+                    document.filter.totrade2.disabled=true;
+                    document.filter.fromtrade2.disabled=true;
+                    document.filter.totrade1.disabled=false;
+                    document.filter.fromtrade1.disabled=false;
+                }
+            }
+            
+            function chkdatelaw() {
+                var whichinput=document.getElementsByName("filter2law");
+                var k;
+                var len=whichinput.length;
+                for (i=0;i<len;i++) {
+                    if(whichinput[i].checked) {
+                        k=i;
+                    }
+                }
+                if(whichinput[k].value==="close") {   
+                    document.TANCFilterForm.tolaw1.disabled=true;
+                    document.TANCFilterForm.fromlaw1.disabled=true;
+                    document.TANCFilterForm.tolaw3.disabled=true;
+                    document.TANCFilterForm.fromlaw3.disabled=true;
+                    document.TANCFilterForm.tolaw2.disabled=false;
+                    document.TANCFilterForm.fromlaw2.disabled=false;
+                } else if(whichinput[k].value==="init") {   
+                    document.TANCFilterForm.tolaw2.disabled=true;
+                    document.TANCFilterForm.fromlaw2.disabled=true;
+                    document.TANCFilterForm.tolaw3.disabled=true;
+                    document.TANCFilterForm.fromlaw3.disabled=true;
+                    document.TANCFilterForm.tolaw1.disabled=false;
+                    document.TANCFilterForm.fromlaw1.disabled=false;
+                } else if(whichinput[k].value==="success") {   
+                    document.TANCFilterForm.tolaw2.disabled=true;
+                    document.TANCFilterForm.fromlaw2.disabled=true;
+                    document.TANCFilterForm.tolaw1.disabled=true;
+                    document.TANCFilterForm.fromlaw1.disabled=true;
+                    document.TANCFilterForm.tolaw.disabled=false;
+                    document.TANCFilterForm.fromlaw3.disabled=false;
+                }
+            }   
+            
+            function tanccountry() {
+                var select1 = document.getElementsByName("country");
+                var selected1 = [];
+                for (var i = 0; i < select1.length; i++) {
+                    if (select1.options[i].selected) {
+                        alert("File Selected for " + select1.options[i].value +" ");
+                        //selected1.push(select1.options[i].value);
+                    }
+                }
+            } 
+            
+            function chkcountrytanc() {
+                var whichinput=document.getElementsByName("country");
+                var k;
+                var len=whichinput.length;
+                for (i=0;i<len;i++) {
+                    if(whichinput[i].checked) {
+                        k=i;
+                    }
+                }
+                countryOption = whichinput[k].value;
+                if(whichinput[k].value==="all") {   
+                    document.TANCFilterForm.countryList.disabled=true;
+                } else  {   
+                    document.TANCFilterForm.countryList.disabled=false;
+                }
+                    
+            }
+            
+        </script>
+
+        <script>
+        </script>
+                
+        <form name="adcvdFilterForm" method="get"  action="" style="position: absolute; top:50px; left:100px; width:600px; height:25px">
+            <input type="button" value="Home" onClick="goToHomeForm();">
+            <h3>Apply Filters</h3>
+            <label><strong>Display Data For:</strong></label><br/>      
+            <p><input type="radio" name="filterad1" value="anti"/> Antidumping/Countervailing Petitions Initiated </p>
+            <p><input type="radio" checked name="filterad1" value="count"/> Antidumping/Countervailing Orders </p>
+            <p><input type="radio" checked name="filterad1" value="All"/>Both AD/CVD Petitions Initiated and Orders </p>
+            <label><strong>Select date</strong></label><br/>    
+            <p><input type="radio" name="filter2adcase" value="init" onClick="chkdateadcase();"/> Case Initiated </p>
+            <input type="date" name="toadcase1" onClick="chkdateadcase();"/> to  <input type="date" name="fromadcase1" onClick="chkdateadcase();" /><br/>
+            <p><input type="radio" checked name="filter2adcase" value="close" onClick="chkdateadcase();"> Case Closed </p>
+            <input type="date" name="toadcase2" onClick="chkdateadcase();"/> to  <input type="date" name="fromadcase2"  onClick="chkdateadcase();" /><br/>
+            <br/>
+            <label><strong>Filter Company</strong></label><br/>    
+            <p><input type="radio" name="filter3ad" value="small"/> Small or medium EnterPrise </p>
+            <p><input type="radio" checked name="filter3ad" value="All"/> All-Default  </p>
+            <br/>
+            <label><strong>Filter Country:</strong></label>
+            <select name= "countryad" multiple>
+                <option value = "AFG">Afghanistan</option>
+                <option value = "ALB">Albania</option>
+                <option value = "DZA">Algeria</option>
+                <option value = "ASM">American Samoa</option>                
+                <option value = "AND">Andorra</option>
+                <option value = "AGO">Angola</option>
+                <option value = "AIA">Anguilla</option>
+                <option value = "ATA">Antarctica</option>
+                <option value = "ATG">Antigua and Barbuda</option>
+                <option value = "ARG">Argentina</option>
+                <option value = "ARM">Armenia</option>
+                <option value = "ABW">Aruba</option>
+                <option value = "AUS">Australia</option>
+                <option value = "AUT">Austria</option>
+                <option value = "AZE">Azerbaijan</option>
+                <option value = "BHS">Bahamas</option>
+                <option value = "BHR">Bahrain</option>
+                <option value = "BGD">Bangladesh</option>
+                <option value = "BRB">Barbados</option>
+                <option value = "BLR">Belarus</option>
+                <option value = "BEL">Belgium</option>
+                <option value = "BLZ">Belize</option>
+                <option value = "BEN">Benin</option>
+                <option value = "BMU">Bermuda</option>
+                <option value = "BTN">Bhutan</option>
+                <option value = "BOL">Bolivia</option>
+                <option value = "BIH">Bosnia Herzegovina</option>
+                <option value = "BWA">Botswana</option>
+                <option value = "BVT">Bouvet Island</option>
+                <option value = "BRA">Brazil</option>
+                <option value = "IOT">British Indian Ocean Territory</option>
+                <option value = "BRN">Brunei</option>
+                <option value = "BGR">Bulgaria</option>
+                <option value = "BFA">Burkina Faso</option>
+                <option value = "BDI">Burundi</option>
+                <option value = "KHM">Cambodia</option>
+                <option value = "CMR">Cameroon</option>
+                <option value = "CAN">Canada</option>
+                <option value = "CPV">Cape Verde</option>
+                <option value = "CYM">Cayman Islands</option>
+                <option value = "CAF">Central African Republic</option>
+                <option value = "TCD">Chad</option>
+                <option value = "CHL">Chile</option>
+                <option value = "CHN">China</option>
+                <option value = "COL">Colombia</option>
+                <option value = "COM">Comoros</option>
+                <option value = "COD">Congo (Democratic Republic)</option>
+                <option value = "COG">Congo (Republic)</option>
+                <option value = "COK">Cook Islands</option>
+                <option value = "CRI">Costa Rica</option>
+                <option value = "CIV">Cote d'Ivoire</option>
+                <option value = "HRV">Croatia</option>
+                <option value = "CUB">Cuba</option>
+                <option value = "CYP">Cyprus</option>
+                <option value = "CZE">Czech Republic</option>
+                <option value = "DNK">Denmark</option>
+                <option value = "DJI">Djibouti</option>
+                <option value = "DMA">Dominica</option>
+                <option value = "DOM">Dominican Republic</option>
+                <option value = "TMP">East Timor</option>
+                <option value = "ECU">Ecuador</option>
+                <option value = "EGY">Egypt</option>
+                <option value = "SLV">El Salvador</option>
+                <option value = "GNQ">Equatorial Guinea</option>
+                <option value = "ERI">Eritrea</option>
+                <option value = "EST">Estonia</option>
+                <option value = "ETH">Ethiopia</option>
+                <option value = "EUN">European Union</option>
+                <option value = "FNK">Falkland Islands (Malvinas)</option>
+                <option value = "FRO">Faroe Islands</option>
+                <option value = "FJI">Fiji</option>
+                <option value = "FIN">Finland</option>
+                <option value = "FRA">France</option>
+                <option value = "FXX">France, Metropolitan</option>
+                <option value = "GUF">French Guiana</option>
+                <option value = "PYF">French Polynesia</option>
+                <option value = "ATF">French Southern Territories</option>
+                <option value = "GAB">Gabon</option>
+                <option value = "GMB">Gambia</option>
+                <option value = "GEO">Georgia</option>
+                <option value = "DEU">Germany</option>
+                <option value = "GHA">Ghana</option>
+                <option value = "GIB">Gibraltar</option>
+                <option value = "GRC">Greece</option>
+                <option value = "GRL">Greenland</option>
+                <option value = "GRD">Grenada</option>
+                <option value = "GLP">Guadeloupe</option>
+                <option value = "GUM">Guam</option>
+                <option value = "GTM">Guatemala</option>
+                <option value = "GIN">Guinea</option>
+                <option value = "GNB">Guinea-Bissau</option>
+                <option value = "GUY">Guyana</option>
+                <option value = "HTI">Haiti</option>
+                <option value = "HMD">Heard and Mc Donald Islands</option>
+                <option value = "VAT">Holy See (Vatican City State)</option>
+                <option value = "HND">Honduras</option>
+                <option value = "HKG">Hong Kong</option>
+                <option value = "HUN">Hungary</option>
+                <option value = "ISL">Iceland</option>
+                <option value = "IND">India</option>
+                <option value = "IDN">Indonesia</option>
+                <option value = "IRN">Iran</option>
+                <option value = "IRQ">Iraq</option>
+                <option value = "IRL">Ireland</option>
+                <option value = "ISR">Israel</option>
+                <option value = "ITA">Italy</option>
+                <option value = "JAM">Jamaica</option>
+                <option value = "JPN">Japan</option>
+                <option value = "JOR">Jordan</option>
+                <option value = "KAZ">Kazakhstan</option>
+                <option value = "KEN">Kenya</option>
+                <option value = "KIR">Kiribati</option>
+                <option value = "PRK">Korea, D.P.R.O</option>
+                <option value = "KOR">Korea (South)</option>
+                <option value = "KOS">Kosovo</option>
+                <option value = "KWT">Kuwait</option>
+                <option value = "KGZ">Kyrgyzstan</option>
+                <option value = "LAO">Laos</option>
+                <option value = "LVA">Latvia</option>
+                <option value = "LBN">Lebanon</option>
+                <option value = "LSO">Lesotho</option>
+                <option value = "LBR">Liberia</option>
+                <option value = "LBY">Libya</option>
+                <option value = "LIE">Liechtenstein</option>
+                <option value = "LTU">Lithuania</option>
+                <option value = "LUX">Luxembourg</option>
+                <option value = "MAC">Macau</option>
+                <option value = "MKD">Macedonia</option>
+                <option value = "MDG">Madagascar</option>
+                <option value = "MWI">Malawi</option>
+                <option value = "MYS">Malaysia</option>
+                <option value = "MDV">Maldives</option>
+                <option value = "MLI">Mali</option>
+                <option value = "MLT">Malta</option>
+                <option value = "MHL">Marshall Islands</option>
+                <option value = "MTQ">Martinique</option>
+                <option value = "MRT">Mauritania</option>
+                <option value = "MUS">Mauritius</option>
+                <option value = "MYT">Mayotte</option>
+                <option value = "MEX">Mexico</option>
+                <option value = "FSM">Micronesia</option>
+                <option value = "MDA">Moldova</option>
+                <option value = "MCO">Monaco</option>
+                <option value = "MNG">Mongolia</option>
+                <option value = "MNE">Montenegro</option>
+                <option value = "MSR">Montserrat</option>
+                <option value = "MAR">Morocco</option>
+                <option value = "MOZ">Mozambique</option>
+                <option value = "MMR">Myanmar</option>
+                <option value = "NAM">Namibia</option>
+                <option value = "NRU">Nauru</option>
+                <option value = "NPL">Nepal</option>
+                <option value = "NLD">Netherlands</option>
+                <option value = "ANT">Netherlands Antilles</option>
+                <option value = "NCL">New Caledonia</option>
+                <option value = "NZL">New Zealand</option>
+                <option value = "NIC">Nicaragua</option>
+                <option value = "NER">Niger</option>
+                <option value = "NGA">Nigeria</option>
+                <option value = "NIU">Niue</option>
+                <option value = "NFK">Norfolk Island</option>
+                <option value = "MNP">Northern Mariana Islands</option>
+                <option value = "NOR">Norway</option>
+                <option value = "OMN">Oman</option>
+                <option value = "PAK">Pakistan</option>
+                <option value = "PLW">Palau</option>
+                <option value = "PAN">Panama</option>
+                <option value = "PNG">Papua New Guinea</option>
+                <option value = "PRY">Paraguay</option>
+                <option value = "PER">Peru</option>
+                <option value = "PHL">Philippines</option>
+                <option value = "POL">Poland</option>
+                <option value = "PRT">Portugal</option>
+                <option value = "PRI">Puerto Rico</option>
+                <option value = "QAT">Qatar</option>
+                <option value = "REU">Reunion</option>
+                <option value = "ROM">Romania</option>
+                <option value = "RUS">Russia</option>
+                <option value = "RWA">Rwanda</option>
+                <option value = "KNA">St Kitts and Nevis</option>
+                <option value = "LCA">St Lucia</option>
+                <option value = "VCT">Saint Vincent and the Grenadines</option>
+                <option value = "WSM">Samoa</option>
+                <option value = "SMR">San Marino</option>
+                <option value = "STP">Sao Tome and Principe</option>
+                <option value = "SAU">Saudi Arabia</option>
+                <option value = "SEN">Senegal</option>
+                <option value = "SRB">Serbia</option>
+                <option value = "SRM">Serbia and Montenegro</option>
+                <option value = "SYC">Seychelles</option>
+                <option value = "SLE">Sierra Leone</option>
+                <option value = "SGP">Singapore</option>
+                <option value = "SVK">Slovak Republic</option>
+                <option value = "SVN">Slovenia</option>
+                <option value = "SLB">Solomon Islands</option>
+                <option value = "SOM">Somalia</option>
+                <option value = "ZAF">South Africa</option>
+                <option value = "SSD">South Sudan</option>
+                <option value = "SGS">South Georgia and South S.S.</option>
+                <option value = "ESP">Spain</option>
+                <option value = "LKA">Sri Lanka</option>
+                <option value = "SHN">St. Helena</option>
+                <option value = "SPM">St. Pierre and Miquelon</option>
+                <option value = "SDN">Sudan</option>
+                <option value = "SUR">Suriname</option>
+                <option value = "SJM">Svalbard and Jan Mayen Islands</option>
+                <option value = "SWZ">Swaziland</option>
+                <option value = "SWE">Sweden</option>
+                <option value = "CHE">Switzerland</option>
+                <option value = "SYR">Syria</option>
+                <option value = "TWN">Taiwan</option>
+                <option value = "TJK">Tajikistan</option>
+                <option value = "TZA">Tanzania</option>
+                <option value = "THA">Thailand</option>
+                <option value = "TGO">Togo</option>
+                <option value = "TKL">Tokelau</option>
+                <option value = "TON">Tonga</option>
+                <option value = "TTO">Trinidad and Tobago</option>
+                <option value = "TUN">Tunisia</option>
+                <option value = "TUR">Turkey</option>
+                <option value = "TKM">Turkmenistan</option>
+                <option value = "TCA">Turks and Caicos Islands</option>
+                <option value = "TUV">Tuvalu</option>
+                <option value = "UGA">Uganda</option>
+                <option value = "UKR">Ukraine</option>
+                <option value = "ARE">United Arab Emirates</option>
+                <option value = "GBR">United Kingdom</option>
+                <option value = "USA">United States</option>
+                <option value = "UMI">U.S. Minor Islands</option>
+                <option value = "URY">Uruguay</option>
+                <option value = "UZB">Uzbekistan</option>
+                <option value = "VUT">Vanuatu</option>
+                <option value = "VEN">Venezuela</option>
+                <option value = "VNM">Vietnam</option>
+                <option value = "YEM">Yemen</option>
+                <option value = "ZMB">Zambia</option>
+                <option value = "ZWE">Zimbabwe</option>
+            </select>
+            <br/>
+            <label><strong>Filter Industry:</strong></label>
+            <select name= "industryad" multiple>
+               <option value = "all">ALL</option>
+               <option value = "2">Aerospace</option>
+               <option value = "3">Automobiles</option>
+               <option value = "4">Consumer Goods</option>
+               <option value = "5">E-Commerce</option>
+               <option value = "6">Energy</option>
+               <option value = "7">Environmental technologies</option>
+               <option value = "8">Financial services</option>
+               <option value = "9">Healthcare products</option>
+               <option value = "10">Information Technologies</option>
+               <option value = "11">Legacy Record</option>
+               <option value = "12">Machinery</option>
+               <option value = "13">Materials</option>
+               <option value = "14">Services industries</option>
+               <option value = "15">Telecommunications</option>
+               <option value = "16">Textiles and apparel, footwear</option>
+               <option value = "17">Textiles and apparel, leather products</option>
+               <option value = "18">Textiles and apparel, textiles and apparel</option>
+               <option value = "19">Travel goods</option>
+               <option value = "20">Travel and tourism</option>
+               <option value = "21">Other</option>
+            </select><br/>
+            <br/>
+            <input type="button" value="Continue" onclick="mapview();" />
+            <button type="reset" value="Reset">Reset</button>
+        </form>
+        
+        <form name="filtertrade" method="get"  action="" style="position: absolute; top:50px; left:100px; width:600px; height:25px">
+            <input type="button" value="Home" onClick="goToHomeForm();">
+            <h3>Apply Filters</h3>
+            <label><strong>Select date</strong></label><br/>    
+            <p><input type="radio" name="filter2trade" value="init" onClick="chkdatetrade();"/> Case Initiated </p>
+            <input type="date" name="totrade1" onClick="chkdatetrade();" /> to  <input type="date" name="fromtrade1"   onClick="chkdatetrade();" /><br/>
+            <p><input type="radio" checked name="filter2trade" value="close" onClick="chkdatetrade();"> Case Closed </p>
+            <input type="date" name="totrade2" onClick="chkdatetrade();" /> to  <input type="date" name="fromtrade2"  onClick="chkdatetrade();" /> ><br/>
+            <br/>
+            <label><strong>Filter Company</strong></label><br/>    
+            <p><input type="radio" name="filter3tr" value="small"> Small or medium EnterPrise </p>
+            <p><input type="radio" checked name="filter3tr" value="All"> All-Default </p>
+            <br/>
+            <label><strong>Filter Country:</strong></label>
+            <select name= "countrytr">
+                <option value = "AFG">Afghanistan</option>
+                <option value = "ALB">Albania</option>
+                <option value = "DZA">Algeria</option>
+                <option value = "ASM">American Samoa</option>                
+                <option value = "AND">Andorra</option>
+                <option value = "AGO">Angola</option>
+                <option value = "AIA">Anguilla</option>
+                <option value = "ATA">Antarctica</option>
+                <option value = "ATG">Antigua and Barbuda</option>
+                <option value = "ARG">Argentina</option>
+                <option value = "ARM">Armenia</option>
+                <option value = "ABW">Aruba</option>
+                <option value = "AUS">Australia</option>
+                <option value = "AUT">Austria</option>
+                <option value = "AZE">Azerbaijan</option>
+                <option value = "BHS">Bahamas</option>
+                <option value = "BHR">Bahrain</option>
+                <option value = "BGD">Bangladesh</option>
+                <option value = "BRB">Barbados</option>
+                <option value = "BLR">Belarus</option>
+                <option value = "BEL">Belgium</option>
+                <option value = "BLZ">Belize</option>
+                <option value = "BEN">Benin</option>
+                <option value = "BMU">Bermuda</option>
+                <option value = "BTN">Bhutan</option>
+                <option value = "BOL">Bolivia</option>
+                <option value = "BIH">Bosnia Herzegovina</option>
+                <option value = "BWA">Botswana</option>
+                <option value = "BVT">Bouvet Island</option>
+                <option value = "BRA">Brazil</option>
+                <option value = "IOT">British Indian Ocean Territory</option>
+                <option value = "BRN">Brunei</option>
+                <option value = "BGR">Bulgaria</option>
+                <option value = "BFA">Burkina Faso</option>
+                <option value = "BDI">Burundi</option>
+                <option value = "KHM">Cambodia</option>
+                <option value = "CMR">Cameroon</option>
+                <option value = "CAN">Canada</option>
+                <option value = "CPV">Cape Verde</option>
+                <option value = "CYM">Cayman Islands</option>
+                <option value = "CAF">Central African Republic</option>
+                <option value = "TCD">Chad</option>
+                <option value = "CHL">Chile</option>
+                <option value = "CHN">China</option>
+                <option value = "COL">Colombia</option>
+                <option value = "COM">Comoros</option>
+                <option value = "COD">Congo (Democratic Republic)</option>
+                <option value = "COG">Congo (Republic)</option>
+                <option value = "COK">Cook Islands</option>
+                <option value = "CRI">Costa Rica</option>
+                <option value = "CIV">Cote d'Ivoire</option>
+                <option value = "HRV">Croatia</option>
+                <option value = "CUB">Cuba</option>
+                <option value = "CYP">Cyprus</option>
+                <option value = "CZE">Czech Republic</option>
+                <option value = "DNK">Denmark</option>
+                <option value = "DJI">Djibouti</option>
+                <option value = "DMA">Dominica</option>
+                <option value = "DOM">Dominican Republic</option>
+                <option value = "TMP">East Timor</option>
+                <option value = "ECU">Ecuador</option>
+                <option value = "EGY">Egypt</option>
+                <option value = "SLV">El Salvador</option>
+                <option value = "GNQ">Equatorial Guinea</option>
+                <option value = "ERI">Eritrea</option>
+                <option value = "EST">Estonia</option>
+                <option value = "ETH">Ethiopia</option>
+                <option value = "EUN">European Union</option>
+                <option value = "FNK">Falkland Islands (Malvinas)</option>
+                <option value = "FRO">Faroe Islands</option>
+                <option value = "FJI">Fiji</option>
+                <option value = "FIN">Finland</option>
+                <option value = "FRA">France</option>
+                <option value = "FXX">France, Metropolitan</option>
+                <option value = "GUF">French Guiana</option>
+                <option value = "PYF">French Polynesia</option>
+                <option value = "ATF">French Southern Territories</option>
+                <option value = "GAB">Gabon</option>
+                <option value = "GMB">Gambia</option>
+                <option value = "GEO">Georgia</option>
+                <option value = "DEU">Germany</option>
+                <option value = "GHA">Ghana</option>
+                <option value = "GIB">Gibraltar</option>
+                <option value = "GRC">Greece</option>
+                <option value = "GRL">Greenland</option>
+                <option value = "GRD">Grenada</option>
+                <option value = "GLP">Guadeloupe</option>
+                <option value = "GUM">Guam</option>
+                <option value = "GTM">Guatemala</option>
+                <option value = "GIN">Guinea</option>
+                <option value = "GNB">Guinea-Bissau</option>
+                <option value = "GUY">Guyana</option>
+                <option value = "HTI">Haiti</option>
+                <option value = "HMD">Heard and Mc Donald Islands</option>
+                <option value = "VAT">Holy See (Vatican City State)</option>
+                <option value = "HND">Honduras</option>
+                <option value = "HKG">Hong Kong</option>
+                <option value = "HUN">Hungary</option>
+                <option value = "ISL">Iceland</option>
+                <option value = "IND">India</option>
+                <option value = "IDN">Indonesia</option>
+                <option value = "IRN">Iran</option>
+                <option value = "IRQ">Iraq</option>
+                <option value = "IRL">Ireland</option>
+                <option value = "ISR">Israel</option>
+                <option value = "ITA">Italy</option>
+                <option value = "JAM">Jamaica</option>
+                <option value = "JPN">Japan</option>
+                <option value = "JOR">Jordan</option>
+                <option value = "KAZ">Kazakhstan</option>
+                <option value = "KEN">Kenya</option>
+                <option value = "KIR">Kiribati</option>
+                <option value = "PRK">Korea, D.P.R.O</option>
+                <option value = "KOR">Korea (South)</option>
+                <option value = "KOS">Kosovo</option>
+                <option value = "KWT">Kuwait</option>
+                <option value = "KGZ">Kyrgyzstan</option>
+                <option value = "LAO">Laos</option>
+                <option value = "LVA">Latvia</option>
+                <option value = "LBN">Lebanon</option>
+                <option value = "LSO">Lesotho</option>
+                <option value = "LBR">Liberia</option>
+                <option value = "LBY">Libya</option>
+                <option value = "LIE">Liechtenstein</option>
+                <option value = "LTU">Lithuania</option>
+                <option value = "LUX">Luxembourg</option>
+                <option value = "MAC">Macau</option>
+                <option value = "MKD">Macedonia</option>
+                <option value = "MDG">Madagascar</option>
+                <option value = "MWI">Malawi</option>
+                <option value = "MYS">Malaysia</option>
+                <option value = "MDV">Maldives</option>
+                <option value = "MLI">Mali</option>
+                <option value = "MLT">Malta</option>
+                <option value = "MHL">Marshall Islands</option>
+                <option value = "MTQ">Martinique</option>
+                <option value = "MRT">Mauritania</option>
+                <option value = "MUS">Mauritius</option>
+                <option value = "MYT">Mayotte</option>
+                <option value = "MEX">Mexico</option>
+                <option value = "FSM">Micronesia</option>
+                <option value = "MDA">Moldova</option>
+                <option value = "MCO">Monaco</option>
+                <option value = "MNG">Mongolia</option>
+                <option value = "MNE">Montenegro</option>
+                <option value = "MSR">Montserrat</option>
+                <option value = "MAR">Morocco</option>
+                <option value = "MOZ">Mozambique</option>
+                <option value = "MMR">Myanmar</option>
+                <option value = "NAM">Namibia</option>
+                <option value = "NRU">Nauru</option>
+                <option value = "NPL">Nepal</option>
+                <option value = "NLD">Netherlands</option>
+                <option value = "ANT">Netherlands Antilles</option>
+                <option value = "NCL">New Caledonia</option>
+                <option value = "NZL">New Zealand</option>
+                <option value = "NIC">Nicaragua</option>
+                <option value = "NER">Niger</option>
+                <option value = "NGA">Nigeria</option>
+                <option value = "NIU">Niue</option>
+                <option value = "NFK">Norfolk Island</option>
+                <option value = "MNP">Northern Mariana Islands</option>
+                <option value = "NOR">Norway</option>
+                <option value = "OMN">Oman</option>
+                <option value = "PAK">Pakistan</option>
+                <option value = "PLW">Palau</option>
+                <option value = "PAN">Panama</option>
+                <option value = "PNG">Papua New Guinea</option>
+                <option value = "PRY">Paraguay</option>
+                <option value = "PER">Peru</option>
+                <option value = "PHL">Philippines</option>
+                <option value = "POL">Poland</option>
+                <option value = "PRT">Portugal</option>
+                <option value = "PRI">Puerto Rico</option>
+                <option value = "QAT">Qatar</option>
+                <option value = "REU">Reunion</option>
+                <option value = "ROM">Romania</option>
+                <option value = "RUS">Russia</option>
+                <option value = "RWA">Rwanda</option>
+                <option value = "KNA">St Kitts and Nevis</option>
+                <option value = "LCA">St Lucia</option>
+                <option value = "VCT">Saint Vincent and the Grenadines</option>
+                <option value = "WSM">Samoa</option>
+                <option value = "SMR">San Marino</option>
+                <option value = "STP">Sao Tome and Principe</option>
+                <option value = "SAU">Saudi Arabia</option>
+                <option value = "SEN">Senegal</option>
+                <option value = "SRB">Serbia</option>
+                <option value = "SRM">Serbia and Montenegro</option>
+                <option value = "SYC">Seychelles</option>
+                <option value = "SLE">Sierra Leone</option>
+                <option value = "SGP">Singapore</option>
+                <option value = "SVK">Slovak Republic</option>
+                <option value = "SVN">Slovenia</option>
+                <option value = "SLB">Solomon Islands</option>
+                <option value = "SOM">Somalia</option>
+                <option value = "ZAF">South Africa</option>
+                <option value = "SSD">South Sudan</option>
+                <option value = "SGS">South Georgia and South S.S.</option>
+                <option value = "ESP">Spain</option>
+                <option value = "LKA">Sri Lanka</option>
+                <option value = "SHN">St. Helena</option>
+                <option value = "SPM">St. Pierre and Miquelon</option>
+                <option value = "SDN">Sudan</option>
+                <option value = "SUR">Suriname</option>
+                <option value = "SJM">Svalbard and Jan Mayen Islands</option>
+                <option value = "SWZ">Swaziland</option>
+                <option value = "SWE">Sweden</option>
+                <option value = "CHE">Switzerland</option>
+                <option value = "SYR">Syria</option>
+                <option value = "TWN">Taiwan</option>
+                <option value = "TJK">Tajikistan</option>
+                <option value = "TZA">Tanzania</option>
+                <option value = "THA">Thailand</option>
+                <option value = "TGO">Togo</option>
+                <option value = "TKL">Tokelau</option>
+                <option value = "TON">Tonga</option>
+                <option value = "TTO">Trinidad and Tobago</option>
+                <option value = "TUN">Tunisia</option>
+                <option value = "TUR">Turkey</option>
+                <option value = "TKM">Turkmenistan</option>
+                <option value = "TCA">Turks and Caicos Islands</option>
+                <option value = "TUV">Tuvalu</option>
+                <option value = "UGA">Uganda</option>
+                <option value = "UKR">Ukraine</option>
+                <option value = "ARE">United Arab Emirates</option>
+                <option value = "GBR">United Kingdom</option>
+                <option value = "USA">United States</option>
+                <option value = "UMI">U.S. Minor Islands</option>
+                <option value = "URY">Uruguay</option>
+                <option value = "UZB">Uzbekistan</option>
+                <option value = "VUT">Vanuatu</option>
+                <option value = "VEN">Venezuela</option>
+                <option value = "VNM">Vietnam</option>
+                <option value = "YEM">Yemen</option>
+                <option value = "ZMB">Zambia</option>
+                <option value = "ZWE">Zimbabwe</option>
+            </select>
+            <br/>
+            <label><strong>Filter Industry:</strong></label>
+            <select name= "industrytr">
+               <option value = "all">ALL</option>
+               <option value = "2">Aerospace</option>
+               <option value = "3">Automobiles</option>
+               <option value = "4">Consumer Goods</option>
+               <option value = "5">E-Commerce</option>
+               <option value = "6">Energy</option>
+               <option value = "7">Environmental technologies</option>
+               <option value = "8">Financial services</option>
+               <option value = "9">Healthcare products</option>
+               <option value = "10">Information Technologies</option>
+               <option value = "11">Legacy Record</option>
+               <option value = "12">Machinery</option>
+               <option value = "13">Materials</option>
+               <option value = "14">Services industries</option>
+               <option value = "15">Telecommunications</option>
+               <option value = "16">Textiles and apparel, footwear</option>
+               <option value = "17">Textiles and apparel, leather products</option>
+               <option value = "18">Textiles and apparel, textiles and apparel</option>
+               <option value = "19">Travel goods</option>
+               <option value = "20">Travel and tourism</option>
+               <option value = "21">Other</option>
+            </select><br/>
+            <br/>
+            <input type="button" value="Continue" onclick="mapview();" >
+            <button type="reset" value="Reset">Reset</button>
+        </form>
+
+        <form name="filterlaw" method="get"  action="" style="position: absolute; top:50px; left:100px; width:600px; height:25px">
+            <input type="button" value="Home" onClick="goToHomeForm();">
+            <h3>Apply Filters</h3>
+            <label><strong>Select date</strong></label><br/>    
+            <p><input type="radio" name="filter2law" value="init" onClick="chkdatelaw();" /> Case Initiated </p>
+            <input type="date" name="tolaw1" onClick="chkdatelaw();" /> to  <input type="date" name="fromlaw1"   onClick="chkdatelaw();" /><br/>
+            <p><input type="radio" checked name="filter2law" value="close" onClick="chkdatelaw();" /> Case Closed </p>
+            <input type="date" name="tolaw2" onClick="chkdatelaw();"/> to  <input type="date" name="fromlaw2"  onClick="chkdatelaw();" /><br/>
+            <p><input type="radio" checked name="filter2law" value="success" onClick="chkdatelaw();" /> Success </p>
+            <input type="date" name="tolaw3" onClick="chkdatelaw();" /> to  <input type="date" name="fromlaw3"  onClick="chkdatelaw();" /><br/>
+            <br/>
+            <label><strong>Filter Company</strong></label><br/>    
+            <p><input type="radio" name="filter3law" value="small" /> Small or medium EnterPrise </p>
+            <p><input type="radio" checked name="filter3law" value="All" /> All-Default </p>
+            <br/>
+            <label><strong>Filter Country:</strong></label>
+            <select name= "countrylaw">
+                <option value = "AFG">Afghanistan</option>
+                <option value = "ALB">Albania</option>
+                <option value = "DZA">Algeria</option>
+                <option value = "ASM">American Samoa</option>                
+                <option value = "AND">Andorra</option>
+                <option value = "AGO">Angola</option>
+                <option value = "AIA">Anguilla</option>
+                <option value = "ATA">Antarctica</option>
+                <option value = "ATG">Antigua and Barbuda</option>
+                <option value = "ARG">Argentina</option>
+                <option value = "ARM">Armenia</option>
+                <option value = "ABW">Aruba</option>
+                <option value = "AUS">Australia</option>
+                <option value = "AUT">Austria</option>
+                <option value = "AZE">Azerbaijan</option>
+                <option value = "BHS">Bahamas</option>
+                <option value = "BHR">Bahrain</option>
+                <option value = "BGD">Bangladesh</option>
+                <option value = "BRB">Barbados</option>
+                <option value = "BLR">Belarus</option>
+                <option value = "BEL">Belgium</option>
+                <option value = "BLZ">Belize</option>
+                <option value = "BEN">Benin</option>
+                <option value = "BMU">Bermuda</option>
+                <option value = "BTN">Bhutan</option>
+                <option value = "BOL">Bolivia</option>
+                <option value = "BIH">Bosnia Herzegovina</option>
+                <option value = "BWA">Botswana</option>
+                <option value = "BVT">Bouvet Island</option>
+                <option value = "BRA">Brazil</option>
+                <option value = "IOT">British Indian Ocean Territory</option>
+                <option value = "BRN">Brunei</option>
+                <option value = "BGR">Bulgaria</option>
+                <option value = "BFA">Burkina Faso</option>
+                <option value = "BDI">Burundi</option>
+                <option value = "KHM">Cambodia</option>
+                <option value = "CMR">Cameroon</option>
+                <option value = "CAN">Canada</option>
+                <option value = "CPV">Cape Verde</option>
+                <option value = "CYM">Cayman Islands</option>
+                <option value = "CAF">Central African Republic</option>
+                <option value = "TCD">Chad</option>
+                <option value = "CHL">Chile</option>
+                <option value = "CHN">China</option>
+                <option value = "COL">Colombia</option>
+                <option value = "COM">Comoros</option>
+                <option value = "COD">Congo (Democratic Republic)</option>
+                <option value = "COG">Congo (Republic)</option>
+                <option value = "COK">Cook Islands</option>
+                <option value = "CRI">Costa Rica</option>
+                <option value = "CIV">Cote d'Ivoire</option>
+                <option value = "HRV">Croatia</option>
+                <option value = "CUB">Cuba</option>
+                <option value = "CYP">Cyprus</option>
+                <option value = "CZE">Czech Republic</option>
+                <option value = "DNK">Denmark</option>
+                <option value = "DJI">Djibouti</option>
+                <option value = "DMA">Dominica</option>
+                <option value = "DOM">Dominican Republic</option>
+                <option value = "TMP">East Timor</option>
+                <option value = "ECU">Ecuador</option>
+                <option value = "EGY">Egypt</option>
+                <option value = "SLV">El Salvador</option>
+                <option value = "GNQ">Equatorial Guinea</option>
+                <option value = "ERI">Eritrea</option>
+                <option value = "EST">Estonia</option>
+                <option value = "ETH">Ethiopia</option>
+                <option value = "EUN">European Union</option>
+                <option value = "FNK">Falkland Islands (Malvinas)</option>
+                <option value = "FRO">Faroe Islands</option>
+                <option value = "FJI">Fiji</option>
+                <option value = "FIN">Finland</option>
+                <option value = "FRA">France</option>
+                <option value = "FXX">France, Metropolitan</option>
+                <option value = "GUF">French Guiana</option>
+                <option value = "PYF">French Polynesia</option>
+                <option value = "ATF">French Southern Territories</option>
+                <option value = "GAB">Gabon</option>
+                <option value = "GMB">Gambia</option>
+                <option value = "GEO">Georgia</option>
+                <option value = "DEU">Germany</option>
+                <option value = "GHA">Ghana</option>
+                <option value = "GIB">Gibraltar</option>
+                <option value = "GRC">Greece</option>
+                <option value = "GRL">Greenland</option>
+                <option value = "GRD">Grenada</option>
+                <option value = "GLP">Guadeloupe</option>
+                <option value = "GUM">Guam</option>
+                <option value = "GTM">Guatemala</option>
+                <option value = "GIN">Guinea</option>
+                <option value = "GNB">Guinea-Bissau</option>
+                <option value = "GUY">Guyana</option>
+                <option value = "HTI">Haiti</option>
+                <option value = "HMD">Heard and Mc Donald Islands</option>
+                <option value = "VAT">Holy See (Vatican City State)</option>
+                <option value = "HND">Honduras</option>
+                <option value = "HKG">Hong Kong</option>
+                <option value = "HUN">Hungary</option>
+                <option value = "ISL">Iceland</option>
+                <option value = "IND">India</option>
+                <option value = "IDN">Indonesia</option>
+                <option value = "IRN">Iran</option>
+                <option value = "IRQ">Iraq</option>
+                <option value = "IRL">Ireland</option>
+                <option value = "ISR">Israel</option>
+                <option value = "ITA">Italy</option>
+                <option value = "JAM">Jamaica</option>
+                <option value = "JPN">Japan</option>
+                <option value = "JOR">Jordan</option>
+                <option value = "KAZ">Kazakhstan</option>
+                <option value = "KEN">Kenya</option>
+                <option value = "KIR">Kiribati</option>
+                <option value = "PRK">Korea, D.P.R.O</option>
+                <option value = "KOR">Korea (South)</option>
+                <option value = "KOS">Kosovo</option>
+                <option value = "KWT">Kuwait</option>
+                <option value = "KGZ">Kyrgyzstan</option>
+                <option value = "LAO">Laos</option>
+                <option value = "LVA">Latvia</option>
+                <option value = "LBN">Lebanon</option>
+                <option value = "LSO">Lesotho</option>
+                <option value = "LBR">Liberia</option>
+                <option value = "LBY">Libya</option>
+                <option value = "LIE">Liechtenstein</option>
+                <option value = "LTU">Lithuania</option>
+                <option value = "LUX">Luxembourg</option>
+                <option value = "MAC">Macau</option>
+                <option value = "MKD">Macedonia</option>
+                <option value = "MDG">Madagascar</option>
+                <option value = "MWI">Malawi</option>
+                <option value = "MYS">Malaysia</option>
+                <option value = "MDV">Maldives</option>
+                <option value = "MLI">Mali</option>
+                <option value = "MLT">Malta</option>
+                <option value = "MHL">Marshall Islands</option>
+                <option value = "MTQ">Martinique</option>
+                <option value = "MRT">Mauritania</option>
+                <option value = "MUS">Mauritius</option>
+                <option value = "MYT">Mayotte</option>
+                <option value = "MEX">Mexico</option>
+                <option value = "FSM">Micronesia</option>
+                <option value = "MDA">Moldova</option>
+                <option value = "MCO">Monaco</option>
+                <option value = "MNG">Mongolia</option>
+                <option value = "MNE">Montenegro</option>
+                <option value = "MSR">Montserrat</option>
+                <option value = "MAR">Morocco</option>
+                <option value = "MOZ">Mozambique</option>
+                <option value = "MMR">Myanmar</option>
+                <option value = "NAM">Namibia</option>
+                <option value = "NRU">Nauru</option>
+                <option value = "NPL">Nepal</option>
+                <option value = "NLD">Netherlands</option>
+                <option value = "ANT">Netherlands Antilles</option>
+                <option value = "NCL">New Caledonia</option>
+                <option value = "NZL">New Zealand</option>
+                <option value = "NIC">Nicaragua</option>
+                <option value = "NER">Niger</option>
+                <option value = "NGA">Nigeria</option>
+                <option value = "NIU">Niue</option>
+                <option value = "NFK">Norfolk Island</option>
+                <option value = "MNP">Northern Mariana Islands</option>
+                <option value = "NOR">Norway</option>
+                <option value = "OMN">Oman</option>
+                <option value = "PAK">Pakistan</option>
+                <option value = "PLW">Palau</option>
+                <option value = "PAN">Panama</option>
+                <option value = "PNG">Papua New Guinea</option>
+                <option value = "PRY">Paraguay</option>
+                <option value = "PER">Peru</option>
+                <option value = "PHL">Philippines</option>
+                <option value = "POL">Poland</option>
+                <option value = "PRT">Portugal</option>
+                <option value = "PRI">Puerto Rico</option>
+                <option value = "QAT">Qatar</option>
+                <option value = "REU">Reunion</option>
+                <option value = "ROM">Romania</option>
+                <option value = "RUS">Russia</option>
+                <option value = "RWA">Rwanda</option>
+                <option value = "KNA">St Kitts and Nevis</option>
+                <option value = "LCA">St Lucia</option>
+                <option value = "VCT">Saint Vincent and the Grenadines</option>
+                <option value = "WSM">Samoa</option>
+                <option value = "SMR">San Marino</option>
+                <option value = "STP">Sao Tome and Principe</option>
+                <option value = "SAU">Saudi Arabia</option>
+                <option value = "SEN">Senegal</option>
+                <option value = "SRB">Serbia</option>
+                <option value = "SRM">Serbia and Montenegro</option>
+                <option value = "SYC">Seychelles</option>
+                <option value = "SLE">Sierra Leone</option>
+                <option value = "SGP">Singapore</option>
+                <option value = "SVK">Slovak Republic</option>
+                <option value = "SVN">Slovenia</option>
+                <option value = "SLB">Solomon Islands</option>
+                <option value = "SOM">Somalia</option>
+                <option value = "ZAF">South Africa</option>
+                <option value = "SSD">South Sudan</option>
+                <option value = "SGS">South Georgia and South S.S.</option>
+                <option value = "ESP">Spain</option>
+                <option value = "LKA">Sri Lanka</option>
+                <option value = "SHN">St. Helena</option>
+                <option value = "SPM">St. Pierre and Miquelon</option>
+                <option value = "SDN">Sudan</option>
+                <option value = "SUR">Suriname</option>
+                <option value = "SJM">Svalbard and Jan Mayen Islands</option>
+                <option value = "SWZ">Swaziland</option>
+                <option value = "SWE">Sweden</option>
+                <option value = "CHE">Switzerland</option>
+                <option value = "SYR">Syria</option>
+                <option value = "TWN">Taiwan</option>
+                <option value = "TJK">Tajikistan</option>
+                <option value = "TZA">Tanzania</option>
+                <option value = "THA">Thailand</option>
+                <option value = "TGO">Togo</option>
+                <option value = "TKL">Tokelau</option>
+                <option value = "TON">Tonga</option>
+                <option value = "TTO">Trinidad and Tobago</option>
+                <option value = "TUN">Tunisia</option>
+                <option value = "TUR">Turkey</option>
+                <option value = "TKM">Turkmenistan</option>
+                <option value = "TCA">Turks and Caicos Islands</option>
+                <option value = "TUV">Tuvalu</option>
+                <option value = "UGA">Uganda</option>
+                <option value = "UKR">Ukraine</option>
+                <option value = "ARE">United Arab Emirates</option>
+                <option value = "GBR">United Kingdom</option>
+                <option value = "USA">United States</option>
+                <option value = "UMI">U.S. Minor Islands</option>
+                <option value = "URY">Uruguay</option>
+                <option value = "UZB">Uzbekistan</option>
+                <option value = "VUT">Vanuatu</option>
+                <option value = "VEN">Venezuela</option>
+                <option value = "VNM">Vietnam</option>
+                <option value = "YEM">Yemen</option>
+                <option value = "ZMB">Zambia</option>
+                <option value = "ZWE">Zimbabwe</option>
+            </select>
+            <br/>
+            <label><strong>Filter Industry:</strong></label>
+            <select name= "industrylaw">
+               <option value = "all">ALL</option>
+               <option value = "2">Aerospace</option>
+               <option value = "3">Automobiles</option>
+               <option value = "4">Consumer Goods</option>
+               <option value = "5">E-Commerce</option>
+               <option value = "6">Energy</option>
+               <option value = "7">Environmental technologies</option>
+               <option value = "8">Financial services</option>
+               <option value = "9">Healthcare products</option>
+               <option value = "10">Information Technologies</option>
+               <option value = "11">Legacy Record</option>
+               <option value = "12">Machinery</option>
+               <option value = "13">Materials</option>
+               <option value = "14">Services industries</option>
+               <option value = "15">Telecommunications</option>
+               <option value = "16">Textiles and apparel, footwear</option>
+               <option value = "17">Textiles and apparel, leather products</option>
+               <option value = "18">Textiles and apparel, textiles and apparel</option>
+               <option value = "19">Travel goods</option>
+               <option value = "20">Travel and tourism</option>
+               <option value = "21">Other</option>
+            </select><br/>
+            <br/>
+
+            <input type="button" value="Continue" onclick="mapview();" >
+            <button type="reset" value="Reset">Reset</button>
+        </form>
+        <form name="filterftz" method="get"  action="" style="position: absolute; top:30px; left:100px; width:600px; height:25px">
+            <input type="button" value="Home" onClick="goToHomeForm();">
+            <h3>Apply Filters</h3>
+            <label><strong>Select date</strong></label><br/>    
+            <p><input type="radio" name="filter2ftz" value="init" /> Case Initiated </p>
+            <input type="date" name="to" /> to  <input type="date" name="initendad" /><br/>
+            <br/>
+            <label><strong>Filter Company</strong></label><br/>    
+            <p><input type="radio" name="filter3ftz" value="export" /> Exports ($ millions) </p>
+            <p><input type="radio" checked name="filter3ftz" value="All" /> Imports ($ millions) </p>
+            <p><input type="radio" checked name="filter3ftz" value="All" /> All- default </p>
+            <br/>
+            <label><strong>Filter Jobs Facilitated</strong></label><br/>    
+            <p><input type="radio" name="filter4ftz" value="jobs" /> Jobs Facilitated </p>      
+
+            <input type="button" value="Continue" onclick="mapview();" >
+            <button type="reset" value="Reset">Reset</button>
+        </form>
+ 
+ 		<!-- <applet id= launcherApp archive="../lib/slauncherApp.jar" code="LauncherApplet.class" width="0" height="0"></applet> -->
+ 		<!-- <applet id= launcherApp code="LauncherApplet.class" width="0" height="0"></applet> -->
+    </body>
+
+</html>
